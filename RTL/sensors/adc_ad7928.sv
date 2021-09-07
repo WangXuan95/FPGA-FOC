@@ -121,7 +121,7 @@ always @ (posedge clk or negedge rstn)
     end else begin
         o_en_adc <= 1'b0;
         if(cnt>=WAIT_CNT+8'd2 && cnt<WAIT_CNT+8'd32) begin
-            if(~spi_sck)
+            if(spi_sck)
                 data_in_latch <= {data_in_latch[10:0], spi_miso};
         end else if(cnt==WAIT_CNT+8'd32) begin
             if(idx=='0) begin
