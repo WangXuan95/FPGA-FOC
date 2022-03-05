@@ -11,7 +11,7 @@ FpOC
 
 本库实现了基于**角度传感器**（例如磁编码器）的**有感 FOC**，即一个完整的**电流反馈环**，可以进行**扭矩控制**。借助本库，你可以进一步使用 **FPGA** 、**软核 MCU** 或**外置 MCU** 实现更复杂的电机应用。
 
-| ![diagram](https://github.com/WangXuan95/FpOC/blob/main/diagram.png) |
+| ![diagram](./diagram.png) |
 | :---: |
 | 图1：系统框图 |
 
@@ -28,7 +28,7 @@ FpOC
 
 **图1** 是本库的系统框图，实现了一个简单的行为——控制电机的电流（扭矩）按顺时针，逆时针交替运行。同时，使用 UART 打印电流的**控制目标值**和**实际值**，以便观察控制的质量。
 
-该示例的所有代码都在 [./RTL](https://github.com/WangXuan95/FpOC/blob/main/RTL) 目录下。工程在 [./FPGA](https://github.com/WangXuan95/FpOC/blob/main/FPGA) 目录下，需要用 Quartus 软件打开。
+该示例的所有代码都在 [./RTL](./RTL) 目录下。工程在 [./FPGA](./FPGA) 目录下，需要用 Quartus 软件打开。
 
 ## 准备硬件
 
@@ -50,10 +50,10 @@ FpOC
 
 ## 硬件连接与引脚分配
 
-该工程的顶层文件是 [top.sv](https://github.com/WangXuan95/FpOC/blob/main/RTL/top.sv) ，它的 IO 连接方法如下：
+该工程的顶层文件是 [top.sv](./RTL/top.sv) ，它的 IO 连接方法如下：
 
 * **clk_50m** ：  连接在 FPGA 开发板自带的 **50MHz** 晶振上。
-    * 若不是 **50MHz** 也没关系，读 [top.sv](https://github.com/WangXuan95/FpOC/blob/main/RTL/top.sv) 会发现，它用 PLL 把 **50MHz** 转换成 **36.864MHz** 去用，所以你只需要修改 PLL 的配置，把输入频率改成板上晶振的实际频率，输出频率仍保持 **36.864MHz** 即可。
+    * 若不是 **50MHz** 也没关系，读 [top.sv](./RTL/top.sv) 会发现，它用 PLL 把 **50MHz** 转换成 **36.864MHz** 去用，所以你只需要修改 PLL 的配置，把输入频率改成板上晶振的实际频率，输出频率仍保持 **36.864MHz** 即可。
 * **i2c_scl, i2c_sda** ： 连接 AS5600 (磁编码器) 的 I2C 接口。
 * **spi_ss, spi_sck, spi_mosi, spi_miso** ： 连接 AD7928 (ADC芯片) 的 SPI 接口。 
 * **pwm_a, pwm_b, pwm_c** ： 连接电机驱动板的 3 相 PWM 信号。
@@ -62,11 +62,11 @@ FpOC
     * 如果电机驱动板有 3 路 EN 输入，每个对应 1 相，则应该进行 1 对 3 连接。
 * **uart_tx** ： 连接 UART 转 USB 模块，插入计算机的 USB 口，用于监测电流环的跟随曲线，**可不接**。
 
-连接好后别忘了根据实际情况使用 Quartus （或者手动修改[./FPGA/foc.qsf](https://github.com/WangXuan95/FpOC/blob/main/FPGA/foc.qsf)）**修改FPGA芯片型号**，**修改引脚约束**。
+连接好后别忘了根据实际情况使用 Quartus （或者手动修改[./FPGA/foc.qsf](./FPGA/foc.qsf)）**修改FPGA芯片型号**，**修改引脚约束**。
 
 ## 调参
 
-[foc_top.sv](https://github.com/WangXuan95/FpOC/blob/main/RTL/foc/foc_top.sv) 中有一些参数可以调整，例如电机的**极对数**、**PID参数**等，每个参数的含义详见 [foc_top.sv](https://github.com/WangXuan95/FpOC/blob/main/RTL/foc/foc_top.sv) 。可以通过修改 [top.sv](https://github.com/WangXuan95/FpOC/blob/main/RTL/top.sv) 的 97~103 行来修改这些参数。
+[foc_top.sv](./RTL/foc/foc_top.sv) 中有一些参数可以调整，例如电机的**极对数**、**PID参数**等，每个参数的含义详见 [foc_top.sv](./RTL/foc/foc_top.sv) 。可以通过修改 [top.sv](./RTL/top.sv) 的 97~103 行来修改这些参数。
 
 ## 运行示例
 
@@ -98,13 +98,13 @@ FpOC
 
 **图2** 是我这里绘制出的电流跟随曲线。蓝色曲线是第1列数据（d轴电流的实际值）；红色曲线是第2列数据（d轴电流的目标值）；绿色曲线是第3列数据（q轴电流的实际值）；土黄色曲线是第4列数据（q轴电流的目标值）。可以看到实际值能跟着目标值走。
 
-| ![wave](https://github.com/WangXuan95/FpOC/blob/main/wave.png) |
+| ![wave](./wave.png) |
 | :---: |
 | 图2：电流跟随曲线 |
 
 # 代码详解
 
-下表罗列了该工程使用的所有 **(System-)Verilog** 代码文件，这些文件都在 [./RTL](https://github.com/WangXuan95/FpOC/blob/main/RTL) 目录下。，结合**图1**就能看出每个模块的作用。
+下表罗列了该工程使用的所有 **(System-)Verilog** 代码文件，这些文件都在 [./RTL](./RTL) 目录下。，结合**图1**就能看出每个模块的作用。
 
 | 文件名 | 功能 | 备注 |
 | :-- |   :-- |   :-- |  
@@ -126,7 +126,7 @@ FpOC
 | hold_detect.sv | 监测3个下桥臂都导通时，延迟一段时间后触发 sn_adc 信号，指示ADC可以开始采样 | 固定算法，一般不需要改动 |
 
 
-| ![diagram](https://github.com/WangXuan95/FpOC/blob/main/diagram.png) |
+| ![diagram](./diagram.png) |
 | :---: |
 | 图1：系统框图 |
 
@@ -140,9 +140,9 @@ FpOC
 * **青色**部分是FPGA中的 FOC 的固定算法，属于**硬件无关逻辑**，一般不需要改变。
 * **黄色**部分是**用户自定逻辑**，用户可以修改 user behavior 来实现各种电机应用。或者修改 uart_monitor 来监测其它变量。
 
-另外，除了 [pll.v](https://github.com/WangXuan95/FpOC/blob/main/RTL/pll.v) 外，该库的所有代码都使用纯 RTL 编写，可以轻易地移植到其它厂商（Xilinx、Lattice等）的 FPGA 上。 [pll.v](https://github.com/WangXuan95/FpOC/blob/main/RTL/pll.v) 只是用来把 50MHz 时钟变成 36.864MHz 时钟的，只适用于 Altera Cyclone IV FPGA，当使用其它厂商或系列的FPGA时，需要使用它们各自的 IP 核或原语（例如Xilinx的clock wizard）来代替。
+另外，除了 [pll.v](./RTL/pll.v) 外，该库的所有代码都使用纯 RTL 编写，可以轻易地移植到其它厂商（Xilinx、Lattice等）的 FPGA 上。 [pll.v](./RTL/pll.v) 只是用来把 50MHz 时钟变成 36.864MHz 时钟的，只适用于 Altera Cyclone IV FPGA，当使用其它厂商或系列的FPGA时，需要使用它们各自的 IP 核或原语（例如Xilinx的clock wizard）来代替。
 
-[top.sv](https://github.com/WangXuan95/FpOC/blob/main/RTL/top.sv) 和 [foc_top.sv](https://github.com/WangXuan95/FpOC/blob/main/RTL/foc/foc_top.sv) 注有详细的注释。如果你了解 FOC 算法，可以直接读懂。如果刚入门 FOC，可以结合参考资料[6~9]去阅读。
+[top.sv](./RTL/top.sv) 和 [foc_top.sv](./RTL/foc/foc_top.sv) 注有详细的注释。如果你了解 FOC 算法，可以直接读懂。如果刚入门 FOC，可以结合参考资料[6~9]去阅读。
 
 
 # FAQ
