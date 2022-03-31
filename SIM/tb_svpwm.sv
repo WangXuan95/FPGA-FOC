@@ -3,7 +3,7 @@
 // Module  : tb_swpwm
 // Type    : simulation, top
 // Standard: SystemVerilog 2005 (IEEE1800-2005)
-// Function: testbench for swpwm.sv
+// Function: testbench for cartesian2polar.sv and swpwm.sv
 //--------------------------------------------------------------------------------------------------------
 
 `timescale 1ps/1ps
