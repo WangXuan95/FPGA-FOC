@@ -1,9 +1,11 @@
-`timescale 1 ns/1 ns
 
 // 模块: adc_ad7928
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
 // 功能：通过 SPI 接口从 ADC7928 (ADC芯片) 中读出 ADC 值。
 // 参数：详见下方注释，该模块可以使用参数完全自由地配置单次转换要用多少个通道以及用哪些通道
 // 输入输出：详见下方注释
+
 module adc_ad7928 #(
     parameter [2:0] CH_CNT = 3'd7,  // 单次 ADC 转换使用的通道数为 CH_CNT+1，例如若 CH_CNT=0，则只使用 CH0 。若 CH_CNT=2，则使用 CH0,CH1,CH2。 若 CH_CNT=7，则使用 CH0,CH1,CH2,CH3,CH4,CH5,CH6,CH7。用的通道越多，ADC转换时延越长（即从 sn_adc 到 en_adc 之间的时间差越长）
     parameter [2:0] CH0 = 3'd0,     // 指示了 CH0 对应 AD7928 的哪个通道

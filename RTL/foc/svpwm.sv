@@ -1,11 +1,13 @@
-`timescale 1 ns/1 ns
 
 // 模块：svpwm
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
 // 功能：7 段式 SVPWM 生成器（调制器） 
 // 输入：定子极坐标系下的电压矢量 Vsρ, Vsθ
 // 输出：PWM使能信号 pwm_en
 //       3相PWM信号 pwm_a, pwm_b, pwm_c
 // 说明：该模块产生的 PWM 的频率是 clk 频率 / 2048。例如 clk 为 36.864MHz ，则 PWM 的频率为 36.864MHz / 2048 = 18kHz
+
 module svpwm (
     input  wire        rstn,
     input  wire        clk,

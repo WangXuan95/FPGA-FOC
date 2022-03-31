@@ -1,4 +1,8 @@
-`timescale 1 ns/1 ns
+
+// 模块: i2c_register_read
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// 功能    : I2C 读控制器
 
 module i2c_register_read #(
     parameter   [15:0] CLK_DIV       = 16'd16,

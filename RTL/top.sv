@@ -1,9 +1,11 @@
-`timescale 1 ns/1 ns
 
 // 模块：top
+// Type    : synthesizable, FPGA's top
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
 // 功能：FOC 使用示例，是FPGA工程的顶层模块，控制电机的切向力矩一会顺时针一会逆时针，同时可以通过 UART 监测电流环控制的跟随曲线
 // 参数：无
 // 输入输出：详见下方注释
+
 module top(
     input  wire clk_50m, // 50MHz 时钟
     // ------- 3相 PWM 信号，（包含使能信号） -----------------------------------------------------------------------------------------------------
@@ -44,11 +46,9 @@ reg  signed [15:0] iq_aim;      // 转子 q 轴（交轴）的目标电流值，
 
 // PLL，用 50MHz 时钟产生 36.864 MHz 时钟
 // 注：该模块仅适用于 Altera Cyclone IV FPGA ，对于其他厂家或系列的FPGA，请使用各自相同效果的IP核/原语（例如Xilinx的clock wizard）代替该模块。
-pll pll_i (
-	.inclk0       ( clk_50m        ), // input : clk_50m
-	.c0           ( clk            ), // output: clk
-	.locked       ( rstn           )  // output: rstn
-);
+wire [3:0] subwire0;
+altpll altpll_i ( .inclk ( {1'b0, clk_50m} ), .clk ( {subwire0, clk} ), .locked ( rstn ),  .activeclock (),  .areset (1'b0), .clkbad (),  .clkena ({6{1'b1}}),  .clkloss (), .clkswitch (1'b0), .configupdate (1'b0), .enable0 (), .enable1 (),  .extclk (),  .extclkena ({4{1'b1}}), .fbin (1'b1), .fbmimicbidir (),  .fbout (), .fref (), .icdrclk (), .pfdena (1'b1), .phasecounterselect ({4{1'b1}}), .phasedone (), .phasestep (1'b1), .phaseupdown (1'b1),  .pllena (1'b1), .scanaclr (1'b0), .scanclk (1'b0), .scanclkena (1'b1), .scandata (1'b0), .scandataout (),  .scandone (), .scanread (1'b0), .scanwrite (1'b0), .sclkout0 (), .sclkout1 (), .vcooverrange (), .vcounderrange ());
+defparam altpll_i.bandwidth_type = "AUTO", altpll_i.clk0_divide_by = 99,  altpll_i.clk0_duty_cycle = 50, altpll_i.clk0_multiply_by = 73, altpll_i.clk0_phase_shift = "0", altpll_i.compensate_clock = "CLK0", altpll_i.inclk0_input_frequency = 20000, altpll_i.intended_device_family = "Cyclone IV E",  altpll_i.lpm_hint = "CBX_MODULE_PREFIX=pll", altpll_i.lpm_type = "altpll",  altpll_i.operation_mode = "NORMAL",  altpll_i.pll_type = "AUTO", altpll_i.port_activeclock = "PORT_UNUSED",  altpll_i.port_areset = "PORT_UNUSED",  altpll_i.port_clkbad0 = "PORT_UNUSED",  altpll_i.port_clkbad1 = "PORT_UNUSED", altpll_i.port_clkloss = "PORT_UNUSED", altpll_i.port_clkswitch = "PORT_UNUSED", altpll_i.port_configupdate = "PORT_UNUSED", altpll_i.port_fbin = "PORT_UNUSED", altpll_i.port_inclk0 = "PORT_USED",  altpll_i.port_inclk1 = "PORT_UNUSED", altpll_i.port_locked = "PORT_USED", altpll_i.port_pfdena = "PORT_UNUSED",  altpll_i.port_phasecounterselect = "PORT_UNUSED", altpll_i.port_phasedone = "PORT_UNUSED", altpll_i.port_phasestep = "PORT_UNUSED", altpll_i.port_phaseupdown = "PORT_UNUSED",  altpll_i.port_pllena = "PORT_UNUSED", altpll_i.port_scanaclr = "PORT_UNUSED",  altpll_i.port_scanclk = "PORT_UNUSED", altpll_i.port_scanclkena = "PORT_UNUSED", altpll_i.port_scandata = "PORT_UNUSED", altpll_i.port_scandataout = "PORT_UNUSED", altpll_i.port_scandone = "PORT_UNUSED", altpll_i.port_scanread = "PORT_UNUSED", altpll_i.port_scanwrite = "PORT_UNUSED", altpll_i.port_clk0 = "PORT_USED", altpll_i.port_clk1 = "PORT_UNUSED", altpll_i.port_clk2 = "PORT_UNUSED",  altpll_i.port_clk3 = "PORT_UNUSED", altpll_i.port_clk4 = "PORT_UNUSED", altpll_i.port_clk5 = "PORT_UNUSED", altpll_i.port_clkena0 = "PORT_UNUSED",  altpll_i.port_clkena1 = "PORT_UNUSED", altpll_i.port_clkena2 = "PORT_UNUSED", altpll_i.port_clkena3 = "PORT_UNUSED",  altpll_i.port_clkena4 = "PORT_UNUSED", altpll_i.port_clkena5 = "PORT_UNUSED", altpll_i.port_extclk0 = "PORT_UNUSED", altpll_i.port_extclk1 = "PORT_UNUSED",  altpll_i.port_extclk2 = "PORT_UNUSED",  altpll_i.port_extclk3 = "PORT_UNUSED",  altpll_i.self_reset_on_loss_lock = "OFF",  altpll_i.width_clock = 5;
 
 
 

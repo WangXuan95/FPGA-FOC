@@ -1,9 +1,11 @@
-`timescale 1 ns/1 ns
 
 // 模块: as5600_read
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
 // 功能：通过 I2C 接口从 AS5600 磁编码器中读出转子机械角度 φ
 // 参数：详见下方注释
 // 输入输出：详见下方注释
+
 module as5600_read #(
     parameter   [15:0] CLK_DIV = 16'd10  // I2C SCL 时钟信号分频系数，SCL 时钟频率 = clk频率 / (4*CLK_DIV) ，例如若 clk 为 40MHz，CLK_DIV=10，则 SCL 频率为 40/(4*10) = 1MHz。注，AS5600 芯片要求 SCL 频率不超过 1MHz
 )(

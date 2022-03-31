@@ -1,4 +1,8 @@
-`timescale 1 ns/1 ns
+
+// 模块： cartesian2polar
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// 功能： 把直角坐标系 (x,y) 转换为极坐标系 
 
 module cartesian2polar #(
     parameter ATTENUAION = 0

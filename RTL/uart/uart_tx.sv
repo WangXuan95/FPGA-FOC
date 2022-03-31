@@ -1,4 +1,7 @@
-`timescale 1 ns/1 ns
+
+// 模块： uart_tx
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
 
 module uart_tx #(
     parameter [15:0] CLK_DIV = 217 // 25MHz / 217 = 115207 ~= 115200

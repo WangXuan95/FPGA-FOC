@@ -1,4 +1,8 @@
-`timescale 1 ns/1 ns
+
+// 模块： pi_controller
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// 功能： PI 控制器
 
 module pi_controller #(
     parameter logic [23:0] Kp = 24'd32768,

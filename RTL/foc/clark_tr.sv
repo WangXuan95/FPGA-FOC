@@ -1,4 +1,8 @@
-`timescale 1 ns/1 ns
+
+// clark_tr 
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// 功能： clark 变换
 
 module clark_tr(
     input  wire               rstn,

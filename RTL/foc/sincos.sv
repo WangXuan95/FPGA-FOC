@@ -1,4 +1,10 @@
-`timescale 1 ns/1 ns
+
+// 模块：sincos 
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// 功能： 计算 sin 和 cos
+//        在 i_theta 上给出角度（0~π被映射为0~4095），
+//        在 o_sin 和 o_cos 上产生 sinθ 和 cosθ （-1~+1 被映射为 -16384~+16384）
 
 module sincos(
     input  wire               rstn,

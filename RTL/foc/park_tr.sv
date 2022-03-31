@@ -1,4 +1,8 @@
-`timescale 1 ns/1 ns
+
+// 模块： park_tr
+// Type    : synthesizable
+// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// 功能： park 变换器
 
 module park_tr(
     input  wire               rstn,
