@@ -7,7 +7,7 @@
 // 输入输出：详见下方注释
 
 module top(
-    input  wire clk_50m, // 50MHz 时钟
+    input  wire clk_50m, // 连接 50MHz 晶振
     // ------- 3相 PWM 信号，（包含使能信号） -----------------------------------------------------------------------------------------------------
     output wire pwm_en,  // 3相共用的使能信号，当 pwm_en=0 时，6个MOS管全部关断。
     output wire pwm_a,   // A相PWM信号。当 =0 时。下桥臂导通；当 =1 时，上桥臂导通
@@ -44,7 +44,7 @@ reg  signed [15:0] iq_aim;      // 转子 q 轴（交轴）的目标电流值，
 
 
 
-// PLL，用 50MHz 时钟产生 36.864 MHz 时钟
+// PLL，用 50MHz 时钟（clk_50m）产生 36.864 MHz 时钟（clk）
 // 注：该模块仅适用于 Altera Cyclone IV FPGA ，对于其他厂家或系列的FPGA，请使用各自相同效果的IP核/原语（例如Xilinx的clock wizard）代替该模块。
 wire [3:0] subwire0;
 altpll altpll_i ( .inclk ( {1'b0, clk_50m} ), .clk ( {subwire0, clk} ), .locked ( rstn ),  .activeclock (),  .areset (1'b0), .clkbad (),  .clkena ({6{1'b1}}),  .clkloss (), .clkswitch (1'b0), .configupdate (1'b0), .enable0 (), .enable1 (),  .extclk (),  .extclkena ({4{1'b1}}), .fbin (1'b1), .fbmimicbidir (),  .fbout (), .fref (), .icdrclk (), .pfdena (1'b1), .phasecounterselect ({4{1'b1}}), .phasedone (), .phasestep (1'b1), .phaseupdown (1'b1),  .pllena (1'b1), .scanaclr (1'b0), .scanclk (1'b0), .scanclkena (1'b1), .scandata (1'b0), .scandataout (),  .scandone (), .scanread (1'b0), .scanwrite (1'b0), .sclkout0 (), .sclkout1 (), .vcooverrange (), .vcounderrange ());
@@ -52,16 +52,21 @@ defparam altpll_i.bandwidth_type = "AUTO", altpll_i.clk0_divide_by = 99,  altpll
 
 
 
-// AS5600 磁编码器读取器，内含简易 I2C 控制器，通过 I2C 接口读取当前转子机械角度 φ
-as5600_read #(
-    .CLK_DIV      ( 16'd10         )  // i2c_scl 时钟信号分频系数，scl频率 = clk频率 / (4*CLK_DIV) ，例如在本例中 clk 为 36.864MHz，CLK_DIV=10，则 SCL 频率为 36864/(4*10) = 922kHz 。注，AS5600 芯片要求 SCL 频率不超过 1MHz
-) as5600_i (
+// 简易 I2C 读取控制器，实现 AS5600 磁编码器读取，读出当前转子机械角度 φ
+wire [3:0] i2c_trash;    // 丢弃的高4位
+i2c_register_read #(
+    .CLK_DIV      ( 16'd10         ),  // i2c_scl 时钟信号分频系数，scl频率 = clk频率 / (4*CLK_DIV) ，例如在本例中 clk 为 36.864MHz，CLK_DIV=10，则 SCL 频率为 36864/(4*10) = 922kHz 。注，AS5600 芯片要求 SCL 频率不超过 1MHz
+    .SLAVE_ADDR   ( 7'h36          ),  // AS5600's I2C slave address
+    .REGISTER_ADDR( 8'h0E          )   // the register address to read
+) as5600_read_i (
     .rstn         ( rstn           ),
     .clk          ( clk            ),
     .scl          ( i2c_scl        ), // I2C 接口： SCL
     .sda          ( i2c_sda        ), // I2C 接口： SDA
-    .o_en         (                ), // output: 每成功读取一次 φ，o_en就产生一个高电平脉冲，这里我们用不到该信号
-    .o_phi        ( phi            )  // output: 转子机械角度 φ
+    .start        ( 1'b1           ), // 持续进行 I2C 读操作
+    .ready        (                ),
+    .done         (                ),
+    .regout       ( {i2c_trash, phi} )
 );
 
 
