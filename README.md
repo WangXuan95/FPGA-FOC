@@ -80,11 +80,11 @@ FpOC
 
 ## 建立FPGA工程
 
-你需要建立 FPGA 工程，把 RTL 目录（包括其子目录）里的所有 .sv 源文件加入工程，请以 [top.sv](./RTL/top.sv) 作为顶层文件。
+你需要建立 FPGA 工程，把 RTL 目录（包括其子目录）里的所有 .sv 源文件加入工程，请以 fpga_top.sv 作为顶层文件。
 
 ### 时钟配置
 
-top.sv 中有一处调用了 altpll 原语，用来把开发板晶振输入的 50MHz 时钟（clk\_50m 信号）变成 36.864MHz 的主时钟（clk 信号），altpll 原语只适用于 Altera Cyclone IV FPGA，如果你用的是其它系列的 FPGA，需要使用它们各自的 IP 核或原语（例如 Xilinx 的 clock wizard）替换它。
+fpga_top.sv 中有一处调用了 altpll 原语，用来把开发板晶振输入的 50MHz 时钟（clk\_50m 信号）变成 36.864MHz 的主时钟（clk 信号），altpll 原语只适用于 Altera Cyclone IV FPGA，如果你用的是其它系列的 FPGA，需要使用它们各自的 IP 核或原语（例如 Xilinx 的 clock wizard）替换它。
 
 若你的开发板的晶振不是 50MHz ，你需要修改 PLL 的配置，保证主时钟 clk 信号的频率是 36.864MHz 即可。
 
@@ -94,7 +94,7 @@ clk 的频率不能超过 40MHz 的原因是 adc_ad7928.sv 会通过二分频来
 
 ### 引脚约束
 
-top.sv 的 IO 连接方法如下：
+fpga_top.sv 的 IO 连接方法如下：
 
 * **clk_50m** ：  连接在 FPGA 开发板的晶振上。
 * **i2c_scl, i2c_sda** ： 连接 AS5600 (磁编码器) 的 I2C 接口。
@@ -109,7 +109,7 @@ top.sv 的 IO 连接方法如下：
 
 ## 调参
 
-要让电机正常工作，可能需要调整 [foc_top.sv](./RTL/foc/foc_top.sv) 中的参数（也就是 Verilog parameter），包括：
+要让电机正常工作，你需要在 fpga_top.sv 中的第103行开始，根据实际情况调整 foc_top 模块的参数（Verilog parameter），包括：
 
 - INIT_CYCLES： 决定了初始化步骤占多少个时钟(clk)周期，取值范围为1~4294967294。该值不能太短，因为要留足够的时间让转子回归电角度=0。在clk频率为 36.864MHz 的情况下，我们可以取 INIT_CYCLES=16777216，则初始化时间为 16777216/36864000=0.45 秒。
 - ANGLE_INV：
@@ -120,8 +120,6 @@ top.sv 的 IO 连接方法如下：
 - SAMPLE_DELAY：采样延时，取值范围0~511，考虑到3相的驱动 MOS 管从开始导通到电流稳定需要一定的时间，所以从3个下桥臂都导通，到 ADC 采样时刻之间需要一定的延时。该参数决定了该延时是多少个时钟周期，当延时结束时，该模块在 sn_adc 信号上产生一个高电平脉冲，指示外部 ADC “可以采样了”。在本例中，使用默认值 9'd120 即可。
 - Kp：PID 的 P 参数。
 - Ki：PID 的 I 参数。
-
-你需要根据你所选的电机型号等实际情况，通过修改 [top.sv](./RTL/top.sv) 的 97~103 行来调整这些参数。
 
 调好参后，综合并烧录到 FPGA 后，应该能看到电机正反交替运行。
 
@@ -165,7 +163,7 @@ top.sv 的 IO 连接方法如下：
 
 | 文件名 | 功能 | 备注 |
 | :-- |   :-- |   :-- |
-| top.sv | FPGA工程的顶层模块 |  |
+| fpga_top.sv | FPGA工程的顶层模块 |  |
 | uart_monitor.sv | UART 发送器，用于数据监测 | 不需要的话可以移除       |
 | i2c_register_read.sv | I2C 读取器，用于读取 AS5600 磁编码器 | |
 | adc_ad7928.sv | AD7928 读取器 | |
@@ -190,7 +188,7 @@ top.sv 的 IO 连接方法如下：
 * **黄色**部分是FPGA内的**用户自定逻辑**，用户可以修改 user behavior 来实现各种电机应用。或者修改 uart_monitor 来监测其它变量。
 * **淡橙色**部分是FPGA外部的硬件电路，也就是电机、电机驱动板、角度传感器这些东西。
 
-另外，除了 top.sv 中调用的 altpll 原语外，该库的所有代码都使用纯 RTL 编写，可以轻易地移植到其它厂商（Xilinx、Lattice等）的 FPGA 上。altpll 原语只是用来把 50MHz 时钟变成 36.864MHz 时钟的，只适用于 Altera Cyclone IV FPGA，当使用其它厂商或系列的FPGA时，需要使用它们各自的 IP 核或原语（例如Xilinx的clock wizard）来代替。
+另外，除了 fpga_top.sv 中调用的 altpll 原语外，该库的所有代码都使用纯 RTL 编写，可以轻易地移植到其它厂商（Xilinx、Lattice等）的 FPGA 上。
 
 
 

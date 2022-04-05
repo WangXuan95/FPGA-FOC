@@ -1,12 +1,12 @@
 
-// 模块：top
+// fpga_top
 // Type    : synthesizable, FPGA's top
 // Standard: SystemVerilog 2005 (IEEE1800-2005)
 // 功能：FOC 使用示例，是FPGA工程的顶层模块，控制电机的切向力矩一会顺时针一会逆时针，同时可以通过 UART 监测电流环控制的跟随曲线
 // 参数：无
 // 输入输出：详见下方注释
 
-module top(
+module fpga_top (
     input  wire clk_50m, // 连接 50MHz 晶振
     // ------- 3相 PWM 信号，（包含使能信号） -----------------------------------------------------------------------------------------------------
     output wire pwm_en,  // 3相共用的使能信号，当 pwm_en=0 时，6个MOS管全部关断。
