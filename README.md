@@ -1,7 +1,10 @@
 ![语言](https://img.shields.io/badge/语言-systemverilog_(IEEE1800_2005)-CAD09D.svg) ![仿真](https://img.shields.io/badge/仿真-iverilog-green.svg) ![部署](https://img.shields.io/badge/部署-quartus-blue.svg) ![部署](https://img.shields.io/badge/部署-vivado-FF1010.svg)
 
+中文 | [English](#en)
+
 FpOC
 ===========================
+
 基于 **FPGA** 的**磁场定向控制 (FOC)**，用于驱动**永磁同步电机 (PMSM)** 或**无刷直流电机 (BLDC)**
 
 **FOC控制算法**对传感器采样速率和处理器算力提出了一定的要求，使用 **FPGA** 实现的 **FOC** 可以获得更好的**实时性**，并且更方便进行**多路扩展**和**多路反馈协同**。
@@ -30,7 +33,7 @@ FpOC
   - [用串口监视电流环](#用串口监视电流环)
 - [设计代码详解](#设计代码详解)
 - [RTL仿真](#RTL仿真)
-  - [clark_tr和park_tr子模块的仿真](clark_tr和park_tr的仿真)
+  - [clark_tr和park_tr子模块的仿真](#clark_tr和park_tr的仿真)
   - [cartesian2polar和svpwm子模块的仿真](#cartesian2polar和svpwm的仿真)
 - [FAQ](#FAQ)
 
@@ -40,20 +43,20 @@ FpOC
 
 **图1** 是示例程序的系统框图，它调用了我实现的 FOC 电流环模块 (foc_top.sv) 来实现一个简单的行为——控制电机的电流（扭矩）按顺时针、逆时针、顺时针、逆时针地交替运行。同时，使用 UART 打印电流的**控制目标值**和**实际值**，以便观察 FOC 电流环控制的质量。
 
-该示例的所有代码都在 RTL 目录内。工程在 FPGA 目录内（这是一个 Quartus 工程，但由于本库是可移植性设计，也可以很容易地部署到 VIvado 上，只需要把不可移植的 PLL 核替换掉）。
+该示例的所有代码都在 RTL 目录内。
 
 
 
 ## 搭建硬件
 
-运行本库的电机驱动需要的硬件包括：
+运行本示例所需要的硬件包括：
 
-* **FPGA 开发板** ：需有至少 **10** 个 **GPIO** ，用来接：
-    * **I2C (2*GPIO)** ， 用来连接 AS5600 磁编码器。
-    * **SPI (4*GPIO)** ， 用来连接 AD7928 ADC。
-    * **PWM (3*GPIO)** ， 用来输出 3 相 PWM 到电机驱动板。
-    * **PWM_EN (1*GPIO)** ， 用来输出 1 路 EN (使能) 到电机驱动板（EN=低电平代表所有桥臂关断）。
-    * **UART (1*GPIO)** ，单向(仅发送)的UART，连接计算机的串口，用于监测电流环的跟随曲线，**可不接**。
+* **FPGA 开发板** ：需有至少 10 个 3.3V 的 IO ，用来接：
+    * **I2C (2*IO)** ， 用来连接 AS5600 磁编码器。
+    * **SPI (4*IO)** ， 用来连接 AD7928 ADC。
+    * **PWM (3*IO)** ， 用来输出 3 相 PWM 到电机驱动板。
+    * **PWM_EN (1*IO)** ， 用来输出 1 路 EN (使能) 到电机驱动板（PWM_EN=低电平代表所有桥臂关断）。
+    * **UART (1*IO)** ，单向(仅发送)的UART，连接计算机的串口，用于监测电流环的跟随曲线，**可不接**。
 * **PMSM** 或 **BLDC 电机**。
 * **电机驱动板**：要支持3相 PWM 输入信号（PWM=0时下桥臂导通，PWM=1时上桥臂导通），并且要内置**低侧电阻采样+放大器**对 3 相电流进行放大。
 * **获取转子角度的磁编码器**：本库直接支持的型号是 AS5600 ，需要安装在电机上。
@@ -66,7 +69,7 @@ FpOC
 
 > 注意，这个板子包括了**相电流采样的ADC**和**电机驱动板**的功能，但不包括 AS5600 磁编码器，磁编码器是需要安装在电机上的，需要你额外准备。
 
-|                 ![wave](./figures/sch.png)                  |
+|                  ![sch](./figures/sch.png)                  |
 | :---------------------------------------------------------: |
 | **图2**：电机驱动板原理图，其中 AD7928 ADC 用来采样三相电流 |
 
@@ -84,26 +87,26 @@ FpOC
 
 ### 时钟配置
 
-fpga_top.sv 中有一处调用了 altpll 原语，用来把开发板晶振输入的 50MHz 时钟（clk\_50m 信号）变成 36.864MHz 的主时钟（clk 信号），altpll 原语只适用于 Altera Cyclone IV FPGA，如果你用的是其它系列的 FPGA，需要使用它们各自的 IP 核或原语（例如 Xilinx 的 clock wizard）替换它。
+fpga_top.sv 中有一处调用了 `altpll` 原语，用来把开发板晶振输入的 50MHz 时钟（clk\_50m 信号）变成 36.864MHz 的主时钟（clk 信号），`altpll` 原语只适用于 Altera Cyclone IV FPGA，如果你用的是其它系列的 FPGA，需要使用它们各自的 IP 核或原语（例如 Xilinx 的 clock wizard）替换它。
 
 若你的开发板的晶振不是 50MHz ，你需要修改 PLL 的配置，保证主时钟 clk 信号的频率是 36.864MHz 即可。
 
 实际上，主时钟 clk 的频率可以取小于 40MHz 的任意值。clk 是 FOC 系统的驱动时钟，clk 的频率会决定 SVPWM 的频率（SVPWM频率=clk 频率/2048），我选 36.864MHz 是因为可以让 SVPWM 频率 = 36864/2048 = 18kHz，只是为了凑个整数。
 
-clk 的频率不能超过 40MHz 的原因是 adc_ad7928.sv 会通过二分频来产生 SPI 时钟（spi_sck），而 ADC7928 芯片要求 SPI 时钟不能超过 20MHz。
+clk 的频率不能超过 40MHz 的原因是 adc_ad7928.sv 会通过二分频来产生 SPI 时钟（spi\_sck），而 ADC7928 芯片要求 SPI 时钟不能超过 20MHz。
 
 ### 引脚约束
 
 fpga_top.sv 的 IO 连接方法如下：
 
-* **clk_50m** ：  连接在 FPGA 开发板的晶振上。
-* **i2c_scl, i2c_sda** ： 连接 AS5600 (磁编码器) 的 I2C 接口。
-* **spi_ss, spi_sck, spi_mosi, spi_miso** ： 连接 AD7928 (ADC芯片) 的 SPI 接口。 
-* **pwm_a, pwm_b, pwm_c** ： 连接电机驱动板的 3 相 PWM 信号。
-* **pwm_en** : 连接电机驱动板的 EN (使能) 信号。
+* `clk_50m` ：  连接在 FPGA 开发板的晶振上。
+* `i2c_scl`, `i2c_sda` ： 连接 AS5600 (磁编码器) 的 I2C 接口。
+* `spi_ss`, `spi_sck`, `spi_mosi`, `spi_miso` ： 连接 AD7928 (ADC芯片) 的 SPI 接口。 
+* `pwm_a`, `pwm_b`, `pwm_c` ： 连接电机驱动板的 3 相 PWM 信号。
+* `pwm_en` : 连接电机驱动板的 EN (使能) 信号。
     * 如果电机驱动板没有 EN 输入，则不接。
     * 如果电机驱动板有 3 路 EN 输入，每路对应 1 相，则应该进行一对三连接。
-* **uart_tx** ： 连接 UART 转 USB 模块，插入计算机的 USB 口，用于监测电流环的跟随曲线，**可不接**。
+* `uart_tx` ： 连接 UART 转 USB 模块，插入计算机的 USB 口，用于监测电流环的跟随曲线，**可不接**。
 
 
 
@@ -111,15 +114,15 @@ fpga_top.sv 的 IO 连接方法如下：
 
 要让电机正常工作，你需要在 fpga_top.sv 中的第103行开始，根据实际情况调整 foc_top 模块的参数（Verilog parameter），包括：
 
-- INIT_CYCLES： 决定了初始化步骤占多少个时钟(clk)周期，取值范围为1~4294967294。该值不能太短，因为要留足够的时间让转子回归电角度=0。在clk频率为 36.864MHz 的情况下，我们可以取 INIT_CYCLES=16777216，则初始化时间为 16777216/36864000=0.45 秒。
-- ANGLE_INV：
-  - 若角度传感器没装反（A相→B相→C相→A相 的旋转方向与角度传感器的读值的增大方向相同），则该参数应取 0
-  - 若角度传感器装反了（A相→B相→C相→A相 的旋转方向与 角度传感器的读值的增大方向相反），则该参数应取 1
-- POLE_PAIR：电机极对数，取值范围1~255，根据电机型号决定（注意：电角度ψ = 极对数N * 机械角度φ）
-- MAX_AMP：SVPWM 的最大振幅，取值范围为1~511，该值越小，电机能达到的最大力矩越小；但考虑到使用3相下桥臂电阻采样法来采样电流，该值也不能太大，以保证3个下桥臂有足够的持续导通时间来供ADC进行采样。在本例中，使用默认值 9'd384 即可。
-- SAMPLE_DELAY：采样延时，取值范围0~511，考虑到3相的驱动 MOS 管从开始导通到电流稳定需要一定的时间，所以从3个下桥臂都导通，到 ADC 采样时刻之间需要一定的延时。该参数决定了该延时是多少个时钟周期，当延时结束时，该模块在 sn_adc 信号上产生一个高电平脉冲，指示外部 ADC “可以采样了”。在本例中，使用默认值 9'd120 即可。
-- Kp：PID 的 P 参数。
-- Ki：PID 的 I 参数。
+| 参数名         | 取值范围      | 说明                                                         |
+| -------------- | ------------- | ------------------------------------------------------------ |
+| `INIT_CYCLES`  | 1\~4294967293 | 决定了初始化步骤占多少个时钟(clk)周期。该值不能太小，因为要留足够的时间让转子回归电角度=0。在clk频率为 36.864MHz 的情况下，可以取 `INIT_CYCLES=16777216`，则初始化时间为 `16777216/36864000=0.45` 秒。 |
+| `ANGLE_INV`    | 0, 1          | 若角度传感器没装反（A相→B相→C相→A相 的旋转方向与角度传感器的读值的增大方向相同），则该参数应取 0。若角度传感器装反了（A相→B相→C相→A相 的旋转方向与 角度传感器的读值的增大方向相反），则该参数应取 1 。 |
+| `POLE_PAIR`    | 1\~255        | 电机极对数，根据电机型号决定（注意：电角度ψ = 极对数 \* 机械角度φ） |
+| `MAX_AMP`      | 1\~511        | SVPWM 的最大振幅，该值越小，电机能达到的最大力矩越小；但考虑到使用3相下桥臂电阻采样法来采样电流，该值也不能太大，以保证3个下桥臂有足够的持续导通时间来供ADC进行采样。在本例中，使用默认值 `9'd384` 即可。 |
+| `SAMPLE_DELAY` | 0\~511        | 采样延时，考虑到3相的驱动 MOS 管从开始导通到电流稳定需要一定的时间，所以从3个下桥臂都导通，到 ADC 采样时刻之间需要一定的延时。该参数决定了该延时是多少个时钟周期，当延时结束时，该模块在 `sn_adc` 信号上产生一个高电平脉冲，指示外部 ADC “可以采样了”。在本例中，使用默认值 `9'd120` 即可。 |
+| `Kp`           | 0\~16777215   | PID 的 P 参数。                                              |
+| `Ki`           | 0\~16777215   | PID 的 I 参数。                                              |
 
 调好参后，综合并烧录到 FPGA 后，应该能看到电机正反交替运行。
 
@@ -127,7 +130,7 @@ fpga_top.sv 的 IO 连接方法如下：
 
 ## 用串口监视电流环
 
-把 uart_tx 信号通过 **UART 转 USB 模块** （例如 CP2102、CH340 模块） 连接到电脑上，就可以用**串口助手**、**Putty**等软件来监测电流环的跟随效果。
+把 `uart_tx` 信号通过 **UART 转 USB 模块** （例如 CP2102、CH340 模块） 连接到电脑上，就可以用**串口助手**、**Putty**等软件来监测电流环的跟随效果。
 
 > 注: UART 的格式是 115200,8,n,1
 
@@ -188,7 +191,7 @@ fpga_top.sv 的 IO 连接方法如下：
 * **黄色**部分是FPGA内的**用户自定逻辑**，用户可以修改 user behavior 来实现各种电机应用。或者修改 uart_monitor 来监测其它变量。
 * **淡橙色**部分是FPGA外部的硬件电路，也就是电机、电机驱动板、角度传感器这些东西。
 
-另外，除了 fpga_top.sv 中调用的 altpll 原语外，该库的所有代码都使用纯 RTL 编写，可以轻易地移植到其它厂商（Xilinx、Lattice等）的 FPGA 上。
+另外，除了 fpga_top.sv 中调用的 `altpll` 原语外，该库的所有代码都使用纯 RTL 编写，可以轻易地移植到其它厂商（Xilinx、Lattice等）的 FPGA 上。
 
 
 
@@ -202,7 +205,7 @@ fpga_top.sv 的 IO 连接方法如下：
 | --------------------------------- | ------------------------------------------------------------ |
 | tb_clark_park_tr.sv               | 对 clark_tr.sv （clark变换） 和 park_tr.sv （park变换）的仿真程序 |
 | tb_clark_park_tr_run_iverilog.bat | 用 iverilog 运行 tb_clark_park_tr.sv 的命令脚本              |
-| tb_svpwm.sv                       | 对 cartesian2polar.sv 和 svpwm.sv 和 park_tr.sv 的仿真程序   |
+| tb_svpwm.sv                       | 对 cartesian2polar.sv 和 svpwm.sv 的仿真程序                 |
 | tb_svpwm_run_iverilog.bat         | 用 iverilog 运行 tb_svpwm.sv 的命令脚本                      |
 
 使用 iverilog 仿真前，需要安装 iverilog ，见：[iverilog_usage](https://github.com/WangXuan95/WangXuan95/blob/main/iverilog_usage/iverilog_usage.md)
@@ -220,9 +223,9 @@ fpga_top.sv 的 IO 连接方法如下：
 - 使用 clark 变换把 ia, ib, ic 变换成 ialpha, ibeta ，得到一对正交的正弦波（相位相差 π/2 ）。
 - 使用 park 变换把 ialpha, ibeta 变换到定子坐标系，得到定值 id 和 iq （因为实际的计算误差，所以得到的是近似的定值，而不是严格的定值）。
 
-|     ![](./figures/tb_clark_park_tr.png)      |
-| :------------------------------------------: |
-| **图4**：对 clark_tr 与 park_tr 仿真的波形。 |
+| ![tb_clark_park_tr](./figures/tb_clark_park_tr.png) |
+| :-------------------------------------------------: |
+|    **图4**：对 clark_tr 与 park_tr 仿真的波形。     |
 
 ## cartesian2polar和svpwm的仿真
 
@@ -240,15 +243,15 @@ fpga_top.sv 的 IO 连接方法如下：
 - 把 (rho, phi) 输给 svpwm ，产生了 pwma_duty、pwmb_duty、pwmc_duty 这三个马鞍波。如果你熟悉七段式 SVPWM 的原理，就应该知道为什么是马鞍波，这里不做赘述。
 - pwma_duty、pwmb_duty、pwmc_duty 分别决定了 pwm_a, pwm_b, pwm_c 的占空比（duty这个单词就是占空比的意思）。
 
-|            ![](./figures/tb_svpwm.png)            |
+|        ![tb_svpwm](./figures/tb_svpwm.png)        |
 | :-----------------------------------------------: |
 | **图5**：对 cartesian2polar 与 svpwm 仿真的波形。 |
 
 放大波形，可以看到确实是 duty 值越大，对应的 pwm 信号的占空比就越大，如**图6**。
 
-| ![](./figures/tb_svpwm_2.png) |
-| :---------------------------: |
-|     **图6**：图5的放大。      |
+| ![tb_svpwm_2](./figures/tb_svpwm_2.png) |
+| :-------------------------------------: |
+|          **图6**：图5的放大。           |
 
 
 
@@ -317,3 +320,248 @@ AD7928 只有一个T/H，所以采样窗口内要做 3 次采样，这个过程�
 * [7] [如何从零开始写一套自己的FOC矢量控制程序](https://zhuanlan.zhihu.com/p/103758450?utm_source=qzone), 上官致远 - 知乎
 * [8] [STM32电动机控制应用系列讲座](https://www.bilibili.com/video/BV1vT4y1j7kc)
 * [9] [BLDC电机基础](https://www.bilibili.com/video/BV1TW411d7k6)
+
+
+
+
+
+<span id="en">FpOC</span>
+===========================
+
+**FPGA** based **Field Oriented Control (FOC)** for driving **Permanent Magnet Synchronous Motors (PMSM)** or **Brushless DC Motors (BLDC)**
+
+**FOC** puts forward certain requirements on sensor sampling rate and processor computing. Using an FPGA-based FOC can achieve better real-time performance and is more convenient for **multi-channel expansion** and **multi-channel feedback**.
+
+This repository implements FOC based on a **angle sensor** (such as a magnetic encoder). In other word, it implements a complete **current loop** which can perform **torque control**. With this repository, you can further implement more complex motor applications using FPGA or MCU+FPGA.
+
+| ![diagram](./figures/diagram.png) |
+| :-------------------------------: |
+|   **Figure1**: System diagram.    |
+
+The code in this repository has detailed comments (in Chinese). If you are familiar with Verilog but not familiar with FOC, you can quickly learn FOC by reading the code.
+
+### Technical features
+
+* Platform independent：Written in pure SystemVerilog, able to run on various FPGAs such as Altera and Xilinx.
+* Support **3 channels of PWM** + **1 channel of EN**: when PWM=1, the upper MOSFET turns on, and when PWM=0, the lower MOSFET turns on. When EN=0, all 6 MOSFET are turned off.
+* Supports **angle sensor** and **phase current sampling ADC** with **12bit resolution**. For sensors >12bit, low-order truncation is required. For sensors <12bit, low-bit stuffing is required.
+
+* Internally uses **16bit signed integer** for computation, considering that the sensors are 12bit, so 16bit computation is enough.
+
+### Table of contents
+
+- [Demo project: let your motor spin](#Demo project: let your motor spin)
+  - [Build Hardware](#Build Hardware)
+  - [Create FPGA project](#Create FPGA project)
+  - [parameter tuning](#parameter tuning)
+  - [Monitor current using serial port](#Monitor current using serial port)
+- [Design code](#Design code)
+- [RTL simulation](#RTL simulation)
+  - [simulate clark_tr and park_tr](#simulate clark_tr and park_tr)
+  - [simulate cartesian2polar and svpwm](#simulate cartesian2polar and svpwm)
+
+
+
+# Demo project: let your motor spin
+
+Figure1 is the system block diagram of the demo project, it has a simple behavior: control the current (torque) of the motor in clockwise and counterclockwise alternately. At the same time, it use the UART to print the **target value** and **actual value** of the current in order to monitor the quality of the current loop control.
+
+All the code for this demo are in [RTL](./RTL) folder.
+
+## Build Hardware
+
+The hardware required to run this demo includes:
+
+* FPGA board : at least 10 3.3V IO is required, connect to:
+  * **I2C (2*IO)** , connect to AS5600 magnetic encoder (angle sensor)
+  * **SPI (4*IO)** , connect to AD7928 ADC for phase current sampling.
+  * **PWM (3*IO)** , output 3-phase PWM to motor driving MOSFETs (typically on a motor driving board).
+  * **PWM_EN (1*IO)** , output a ENABLE signal to motor driving board, PWM_EN=0 is to turn off all MOSFETs. If there's no enable signal on your motor driving board, left it open.
+  * **UART (1*IO)** , a one-way (only sending) UART, **optionally** connected to the serial port of the computer, used to monitor the current loop.
+* A PMSM or a BLDC.
+* **Motor driving board**: Must support 3-phase PWM input signal (the lower arm is turned on when PWM=0, and the upper arm is turned on when PWM=1), and 3 phases **low-side resistance sampling + amplifier** must be built-in.
+* **A magnetic encoder to obtain the roter angle**: This demo directly supports AS5600, which needs to be installed on the motor.
+* **an ADC to sample 3-phase current**: This demo directly supports AD7928.
+  * I didn't find any off-the-shelf AD7928 module online, so if you want to DIY, you'll need to draw the PCB yourself.
+
+If you have strong hardware skills, you can prepare the above hardware yourself.
+
+But! It is recommended to directly use a **motor driver board** with an **AD7928** that I drew. Its schematic is shown in **Figure2**, and I also provide its manufacturing file [gerber_pcb_foc_shield.zip](./gerber_pcb_foc_shield .zip) , you need to take the manufacturing file to proof the PCB, and then solder it according to **Figure2**.
+
+> Note: This board includes the **phase current sampling ADC** and **motor driveing**, but does not include the AS5600 magnetic encoder, which needs to be installed on the motor. You need to prepare it additionally.
+
+|                  ![sch](./figures/sch.png)                   |
+| :----------------------------------------------------------: |
+| **Figure2**: The schematic of my motor driver board, including AD7928 ADC. |
+
+This board is open source in LCEDA, see [oshwhub.com/wangxuan/arduino-foc-shield](https://oshwhub.com/wangxuan/arduino-foc-shield) .
+
+The reason why this board is designed as an Arduino shield is because many FPGA development boards have an Arduino shield interface (such as DE10-Nano development board) that can be plugged directly into it. It doesn't matter if your FPGA development board does not have an Arduino shield interface, you can directly connect it with Dupont cables (short Dupont cable is recommended).
+
+The motor driver used here is the **MP6540** chip, I have only tried to drive the low-power gimbal motor, but not the high-power motor.
+
+## Create FPGA project
+
+You need to create an FPGA project and add all the .sv source files in the [RTL](./RTL) folder (including its subdirectories) to the project. Please use fpga_top.sv as the top-level file.
+
+### clock config
+
+There is a call to the `altpll` primitive in fpga_top.sv, which convert the 50MHz clock (clk\_50m signal) input by the crystal oscillator into a 36.864MHz main clock (clk signal). The `altpll` primitive is only applicable in Altera Cyclone IV FPGA, if you are using other series of FPGAs, you need to replace it with their IP cores or primitives (e.g. Xilinx's clock wizard).
+
+If the crystal oscillator of your development board is not 50MHz, you need to modify the PLL's configuration to ensure that the frequency of the main clock is 36.864MHz.
+
+In fact, the frequency of the main clock can take any value less than 40MHz. main clock is to drive the FOC system, its frequency will determine the frequency of SVPWM (SVPWM frequency = clk frequency/2048), I choose 36.864MHz because it can make SVPWM frequency = 36864/2048 = 18kHz.
+
+The reason why the frequency of main clock cannot exceed 40MHz is that adc_ad7928.sv will generate the SPI clock (spi\_sck signal) by dividing the frequency by two, and the ADC7928 chip requires that the SPI clock cannot exceed 20MHz.
+
+### pin constraints
+
+The IO connection of fpga_top.sv is as follows:
+
+* `clk_50m` : connect to the crystal oscillator on FPGA board.
+* `i2c_scl`, `i2c_sda` : connect to AS5600's I2C.
+* `spi_ss`, `spi_sck`, `spi_mosi`, `spi_miso` : connect to AD7928's SPI. 
+* `pwm_a`, `pwm_b`, `pwm_c` : connect to 3-phase PWM of the motor driving board.
+* `pwm_en` : connect to the ENABLE signal of the motor driving board.
+  * If there's no ENABLE signal, left it open.
+  * If there are 3 ENABLE signals for every 3 phases, then 1-to-3 connect is recommended.
+* `uart_tx` : **optionally** connect to the Serial Port of computer (e.g., a UART-to-USB module).
+
+## parameter tuning
+
+To make the motor work normally, you need to tune the Verilog parameters of foc_top module which starts from 103 line in fpga_top.sv, including:
+
+| Parameter      | Value Range   | Illustration                                                 |
+| -------------- | ------------- | ------------------------------------------------------------ |
+| `INIT_CYCLES`  | 1\~4294967293 | Determines how many clock (clk) cycles the initialization step takes. The value should not be too small, as there should be enough time for the rotor to return to electrical angle =0. For example, when the clk frequency is 36.864MHz, you can take `INIT_CYCLES=16777216`, then the initialization time is `16777216/36864000=0.45` seconds. |
+| `ANGLE_INV`    | 0 or 1        | If the angle sensor is not installed reversely (the rotation direction of phase A → phase B → phase C → phase A is the same as the increasing direction of the reading value of the angle sensor), this parameter should be set to 0. If the angle sensor is installed reversely, this parameter should be set to 1. |
+| `POLE_PAIR`    | 1\~255        | The number of pole pairs of the motor, which is determined according to the motor model (note: electrical angle ψ = number of pole pairs \* mechanical angle φ). |
+| `MAX_AMP`      | 1\~511        | The maximum duty of SVPWM, the smaller the value, the smaller torque the motor can achieve. But considering that we use the lower arm resistance sampling method, the value should not be too large to ensure that the lower arms have sufficient time for ADC sampling. In this example, the default value of `9'd384` is sufficient. |
+| `SAMPLE_DELAY` | 0\~511        | Sampling delay, considering that the 3-phase drive MOSFET needs a certain time from the start of conduction to the current stabilization, so a certain delay is required from the conduction of the three lower arms to the ADC sampling time. This parameter determines how many clock cycles this delay is, and when the delay is over, the module generates a high-level pulse on the `sn_adc` signal, indicating that the external ADC is "ready to sample". In this example, the default value of `9'd120` is sufficient. |
+| `Kp`           | 0\~16777215   | Kp for PID.                                                  |
+| `Ki`           | 0\~16777215   | Ki for PID.                                                  |
+
+After tuning the parameters, you can compile and program to the FPGA. You should be able to see the motor spining clockwize and anticlockwize alternately.
+
+## Monitor current using serial port
+
+Connect the `uart_tx` signal to the computer through **UART to USB module** (such as CP2102, CH340 module), you can use **Serial Assistant**, **Putty**, **HyperTerminal**, **minicom** or other serial port software to monitor the controll effect of the current loop.
+
+> Note : UART config is 115200,8,n,1
+
+The information printed by the serial port is shown as follow. The first to fourth columns are: **actual value of d-axis current**, **target value of d-axis current**, **actual value of q-axis current**, **target value of q-axis current **. It can be seen that even if the target value suddenly changes from +200 to -200, the actual value can follow the target value, indicating that the PID control of the current loop is available.
+
+
+     -5       0     206     200 
+    -16       0     202     200 
+     16       0     192     200 
+     15       0     201     200 
+      1       0     197     200 
+     17       0    -211    -200 
+     -6       0    -199    -200 
+    -10       0    -210    -200 
+     -3       0    -207    -200 
+      0       0    -202    -200 
+    -15       0    -211    -200 
+
+
+In addition, you can use the **serial plotter** of **Arduino IDE** to display the current following curve in real time. Go to [Arduino official website](https://www.arduino.cc/en/software) to download **Arduino IDE**, open it after installation, select the correct COM port in "**Tools→Port**", then Click "**Tools→Serial Port Plotter**". It will automatically receive the serial port and use the above 4 columns of data to draw real-time curves.
+
+**Figure3** is the current following curves that I obtain. The blue curve is the data in the first column (the actual value of the d-axis current); the red curve is the data in the second column (the target value of the d-axis current); the green curve is the data in the third column (the actual value of the q-axis current); the yellow curve is the 4th column data (target value of q-axis current). It can be seen that the actual value can follow the target value.
+
+|                 ![wave](./figures/wave.png)                  |
+| :----------------------------------------------------------: |
+| **Figure3** : current following curve printed by the "Serial Port Plotter" in Arduino IDE. |
+
+# Design code
+
+The following table lists all the **SystemVerilog** code files in this project, which are in the [RTL](./RTL) folder. Combined with **Figure1**, you can see the role of each module.
+
+| File Name            | Function                                                     | 备注                                                |
+| :------------------- | :----------------------------------------------------------- | :-------------------------------------------------- |
+| fpga_top.sv          | FPGA project's top module                                    |                                                     |
+| uart_monitor.sv      | UART sender.                                                 | Can be removed if not used.                         |
+| i2c_register_read.sv | Read AS5600 magnetic encoder.                                |                                                     |
+| adc_ad7928.sv        | Read AD7928 ADC.                                             |                                                     |
+| foc_top.sv           | FOC+SVPWM, that is, the blue part in **Figure1**.            | Fixed function, generally do not need to be changed |
+| clark_tr.sv          | Clark transform.                                             | Fixed function, generally do not need to be changed |
+| park_tr.sv           | Park transform.                                              | Fixed function, generally do not need to be changed |
+| sincos.sv            | Sine/Cosine calculator, called by park_tr.sv                 | Fixed function, generally do not need to be changed |
+| pi_controller.sv     | PI controller (PID without D).                               | Fixed function, generally do not need to be changed |
+| cartesian2polar.sv   | Cartesian coordinate system to polar coordinate system.      | Fixed function, generally do not need to be changed |
+| svpwm.sv             | SVPWM 调制器                                                 | Fixed function, generally do not need to be changed |
+| hold_detect.sv       | When three lower bridge arms are all turned on, pulse the sn_adc signal after a delay, indicating that the ADC can start sampling. | Fixed function, generally do not need to be changed |
+
+
+| ![diagram](./figures/diagram.png) |
+| :-------------------------------: |
+|   **Figure1**: System diagram.    |
+
+**Figure1** shows the hierarchy of these modules, I have fully considered the rationality of encapsulation and code reuse when designing this module hierarchy:
+
+* The **pink** part are the sensor controllers in the FPGA, which is **hardware related logic**. If the angle sensor and ADC model change, this part of the code needs to be rewritten.
+* The **blue** part is the fixed algorithm of FOC, it is **hardware independent logic**, generally does not need to be modified, it is the core code of this library!
+* The **yellow** part is the **user-defined logic** in the FPGA, the user can modify the user behavior to realize various motor applications. Or modify `uart_monitor` to monitor other variables.
+* The **orange** part is the hardware circuit outside the FPGA, that is, the motor, the motor driver board, and the angle sensor.
+
+In addition, except for the `altpll` primitives in fpga_top.sv, all code in this library is written in pure RTL and can be easily ported to FPGAs from other vendors (Xilinx, Lattice, etc.).
+
+# RTL simulation
+
+Because I don't have a Verilog model of the motor, I can't simulate the entire FOC algorithm, so I only simulated some of the submodules in the FOC.
+
+The simulation related files are all in the [SIM](./SIM) folder, including the files:
+
+| File Name                         | Function                                                     |
+| --------------------------------- | ------------------------------------------------------------ |
+| tb_clark_park_tr.sv               | Testbench for clark_tr.sv (clark transform) and park_tr.sv (park transform). |
+| tb_clark_park_tr_run_iverilog.bat | Command script to run tb_clark_park_tr.sv with iverilog.     |
+| tb_svpwm.sv                       | Testbench for cartesian2polar.sv and svpwm.sv.               |
+| tb_svpwm_run_iverilog.bat         | Command script to run tb_svpwm.sv with iverilog.             |
+
+Before using iverilog simulation, you need to install iverilog , see: [iverilog_usage](https://github.com/WangXuan95/WangXuan95/blob/main/iverilog_usage/iverilog_usage.md)
+
+## simulate clark_tr and park_tr
+
+Let's run a simulation of the clark transform and park transform first.
+
+Directly double-click tb_clark_park_tr_run_iverilog.bat to run the simulation, the waveform file dump.vcd will be generated after running. Use gtkwave to open dump.vcd. After importing signals, you can see the waveform as **Figure4**. You need to change these signals to the form of analog display:
+
+- For the signal declared as `signed` in the Verilog code, you need to right-click "signal→Data Format→Signed Decimal".
+- Right-click the "signal→Data Format→ Analog→Step" to turn it into the form of analog display.
+
+The simulation waveform in **Figure4** shows that:
+
+- theta θ is an increasmental angle (0→2π→0→2π→...)
+- ia, ib, ic are sine waves generated by θ, ia, ib, ic form a 3-phase sine wave.
+- Transform ia, ib, ic into ialpha (iα), ibeta (iβ) using clark transform to get a pair of quadrature sine waves (phase difference is π/2).
+- Use park transformation to convert (iα, iβ) to the stator coordinate system to get fixed values id and iq.
+
+|     ![tb_clark_park_tr](./figures/tb_clark_park_tr.png)     |
+| :---------------------------------------------------------: |
+| **Figure4** : Simulation waveform for clark_tr and park_tr. |
+
+## simulate cartesian2polar and svpwm
+
+Now run the simulation of cartesian2polar (cartesian to polar) and svpwm.
+
+Directly double-click tb_svpwm_run_iverilog.bat to run the simulation, and the waveform file dump.vcd will be generated after running. Please open dump.vcd with gtkwave, you can see the waveform as **Figure5**.
+
+Note: The three signals `pwma_duty`, `pwmb_duty`, and `pwmc_duty` are not in the top level. You can find them in the svpwm module.
+
+Interpretation of **Figure5** waveform:
+
+- theta θ is an increasmental angle (0→2π→0→2π→...)
+- x and y are quadrature sine waves generated with θ (in other words, y is a sine wave and x is a cosine wave).
+- Treat (x,y) as a Cartesian coordinate value, then cartesian2polar converts it to a polar coordinate system (rho, phi)=(ρ, φ).
+- Sending (ρ, φ) to svpwm, it will generate 3 saddle waves: `pwma_duty`, `pwmb_duty`, and `pwmc_duty`. If you are familiar with the principle of seven-segment SVPWM, you should know why it is a saddle wave, and I will not introduce it here.
+- `pwma_duty`, `pwmb_duty`, `pwmc_duty` determine the duty cycle of `pwm_a`, `pwm_b`, `pwm_c` respectively. You can zoom in on the waveform to verify this, see **Figure6**.
+
+|             ![tb_svpwm](./figures/tb_svpwm.png)              |
+| :----------------------------------------------------------: |
+| **Figure5** : Simulation waveform of cartesian2polar and svpwm. |
+
+| ![tb_svpwm_2](./figures/tb_svpwm_2.png) |
+| :-------------------------------------: |
+|     **Figure6** : Zoom in Figure5.      |
+
