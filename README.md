@@ -29,25 +29,25 @@ The code in this repository has detailed comments (in Chinese). If you are famil
 
 ### Table of contents
 
-- [Demo project: let your motor spin](#Demo project: let your motor spin)
-  - [Build Hardware](#Build Hardware)
-  - [Create FPGA project](#Create FPGA project)
-  - [parameter tuning](#parameter tuning)
-  - [Monitor current using serial port](#Monitor current using serial port)
-- [Design code](#Design code)
-- [RTL simulation](#RTL simulation)
-  - [simulate clark_tr and park_tr](#simulate clark_tr and park_tr)
-  - [simulate cartesian2polar and svpwm](#simulate cartesian2polar and svpwm)
+- [Demo project: let your motor spin](#en1)
+  - [Build Hardware](#en11)
+  - [Create FPGA project](#en12)
+  - [parameter tuning](#en13)
+  - [Monitor current using serial port](#en14)
+- [Design code](#en2)
+- [RTL simulation](#en3)
+  - [simulate clark_tr and park_tr](#en31)
+  - [simulate cartesian2polar and svpwm](#en32)
 
 　
 
-# Demo project: let your motor spin
+# <span id="en1">Demo project: let your motor spin</span>
 
 Figure1 is the system block diagram of the demo project, it has a simple behavior: control the current (torque) of the motor in clockwise and counterclockwise alternately. At the same time, it use the UART to print the **target value** and **actual value** of the current in order to monitor the quality of the current loop control.
 
 All the code for this demo are in [RTL](./RTL) folder.
 
-## Build Hardware
+## <span id="en11">Build Hardware</span>
 
 The hardware required to run this demo includes:
 
@@ -79,7 +79,7 @@ The reason why this board is designed as an Arduino shield is because many FPGA 
 
 The motor driver used here is the **MP6540** chip, I have only tried to drive the low-power gimbal motor, but not the high-power motor.
 
-## Create FPGA project
+## <span id="en12">Create FPGA project</span>
 
 You need to create an FPGA project and add all the .v source files in the [RTL](./RTL) folder (including its subdirectories) to the project. Please use fpga_top.v as the top-level file.
 
@@ -106,7 +106,7 @@ The IO connection of fpga_top.v is as follows:
   * If there are 3 ENABLE signals for every 3 phases, then 1-to-3 connect is recommended.
 * `uart_tx` : **optionally** connect to the Serial Port of computer (e.g., a UART-to-USB module).
 
-## parameter tuning
+## <span id="en13">parameter tuning</span>
 
 To make the motor work normally, you need to tune the Verilog parameters of foc_top module which starts from 103 line in fpga_top.v, including:
 
@@ -128,7 +128,7 @@ input  wire        [30:0] Ki,
 
 After tuning the parameters, you can compile and program to the FPGA. You should be able to see the motor spining clockwize and anticlockwize alternately.
 
-## Monitor current using serial port
+## <span id="en14">Monitor current using serial port</span>
 
 Connect the `uart_tx` signal to the computer through **UART to USB module** (such as CP2102, CH340 module), you can use **Serial Assistant**, **Putty**, **HyperTerminal**, **minicom** or other serial port software to monitor the controll effect of the current loop.
 
@@ -136,7 +136,7 @@ Connect the `uart_tx` signal to the computer through **UART to USB module** (suc
 
 The information printed by the serial port is shown as follow. The first to fourth columns are: **actual value of d-axis current**, **target value of d-axis current**, **actual value of q-axis current**, **target value of q-axis current **. It can be seen that even if the target value suddenly changes from +200 to -200, the actual value can follow the target value, indicating that the PID control of the current loop is available.
 
-
+```
      -5       0     206     200 
     -16       0     202     200 
      16       0     192     200 
@@ -148,7 +148,7 @@ The information printed by the serial port is shown as follow. The first to four
      -3       0    -207    -200 
       0       0    -202    -200 
     -15       0    -211    -200 
-
+```
 
 In addition, you can use the **serial plotter** of **Arduino IDE** to display the current following curve in real time. Go to [Arduino official website](https://www.arduino.cc/en/software) to download **Arduino IDE**, open it after installation, select the correct COM port in "**Tools→Port**", then Click "**Tools→Serial Port Plotter**". It will automatically receive the serial port and use the above 4 columns of data to draw real-time curves.
 
@@ -160,7 +160,7 @@ In addition, you can use the **serial plotter** of **Arduino IDE** to display th
 
 　
 
-# Design code
+# <span id="en2">Design code</span>
 
 The following table lists all the **Verilog** code files in this project, which are in the [RTL](./RTL) folder. Combined with **Figure1**, you can see the role of each module.
 
@@ -195,7 +195,7 @@ In addition, except for the `altpll` primitives in fpga_top.v, all code in this 
 
 　
 
-# RTL simulation
+# <span id="en3">RTL simulation</span>
 
 Because I don't have a Verilog model of the motor, I can't simulate the entire FOC algorithm, so I only simulated some of the submodules in the FOC.
 
@@ -210,7 +210,7 @@ The simulation related files are all in the [SIM](./SIM) folder, including the f
 
 Before using iverilog simulation, you need to install iverilog , see: [iverilog_usage](https://github.com/WangXuan95/WangXuan95/blob/main/iverilog_usage/iverilog_usage.md)
 
-## simulate clark_tr and park_tr
+## <span id="en31">simulate clark_tr and park_tr</span>
 
 Let's run a simulation of the clark transform and park transform first.
 
@@ -230,7 +230,7 @@ The simulation waveform in **Figure4** shows that:
 | :---------------------------------------------------------: |
 | **Figure4** : Simulation waveform for clark_tr and park_tr. |
 
-## simulate cartesian2polar and svpwm
+## <span id="en32">simulate cartesian2polar and svpwm</span>
 
 Now run the simulation of cartesian2polar (cartesian to polar) and svpwm.
 
@@ -402,7 +402,7 @@ input  wire        [30:0] Ki,
 
 以下是串口打印的部分信息。其中第1~4列分别为：**d轴电流的实际值**，**d轴电流的目标值**，**q轴电流的实际值**，**q轴电流的目标值**。可以看到，即使目标值从+200突变到-200，实际值能跟着目标值走，说明电流环的 PID 控制是有效的。
 
-
+```
      -5       0     206     200 
     -16       0     202     200 
      16       0     192     200 
@@ -414,7 +414,7 @@ input  wire        [30:0] Ki,
      -3       0    -207    -200 
       0       0    -202    -200 
     -15       0    -211    -200 
-
+```
 
 另外，你可以借用 **Arduino IDE** 的**串口绘图器**来实时显示电流跟随曲线。前往[Arduino官网](https://www.arduino.cc/en/software)下载 **Arduino IDE**，安装后打开，在“**工具→端口**”中选择正确的COM口，然后点击“**工具→串口绘图器**”，**串口绘图器**会自动接收串口并使用上述4列数据画实时曲线图。
 
