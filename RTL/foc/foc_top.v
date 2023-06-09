@@ -1,24 +1,27 @@
 
+//--------------------------------------------------------------------------------------------------------
 // 模块: foc_top
 // Type    : synthesizable, IP's top
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能：FOC 算法（仅包含电流环） + SVPWM
 // 参数：详见下方注释
 // 输入输出：详见下方注释
+//--------------------------------------------------------------------------------------------------------
 
 module foc_top #(
     // ----------------------------------------------- 模块参数 ---------------------------------------------------------------------------------------------------------------------------------------------------
-    parameter              INIT_CYCLES  = 16777216, // 决定了初始化步骤占多少个时钟(clk)周期，取值范围为1~4294967294。该值不能太短，因为要留足够的时间让转子回归电角度=0。例如若时钟(clk)频率为 36.864MHz，INIT_CYCLES=16777216，则初始化时间为 16777216/36864000=0.45 秒
-    parameter logic        ANGLE_INV    = 1'b0,     // 若角度传感器没装反（A->B->C->A 的旋转方向与 φ 增大的方向相同），则该参数应设为 0。若角度传感器装反了（A->B->C->A 的旋转方向与 φ 增大的方向相反），则该参数应设为 1。
-    parameter logic [ 7:0] POLE_PAIR    = 8'd7,     // 电机极对数 (简记为N)，取值范围1~255，根据电机型号决定。（电角度ψ = 极对数N * 机械角度φ）
-    parameter logic [ 8:0] MAX_AMP      = 9'd384,   // SVPWM 的最大振幅，取值范围为1~511，该值越小，电机能达到的最大力矩越小；但考虑到使用3相下桥臂电阻采样法来采样电流，该值也不能太大，以保证3个下桥臂有足够的持续导通时间来供ADC进行采样。
-    parameter logic [ 8:0] SAMPLE_DELAY = 9'd120,   // 采样延时，取值范围0~511，考虑到3相的驱动 MOS 管从开始导通到电流稳定需要一定的时间，所以从3个下桥臂都导通，到 ADC 采样时刻之间需要一定的延时。该参数决定了该延时是多少个时钟周期，当延时结束时，该模块在 sn_adc 信号上产生一个高电平脉冲，指示外部 ADC “可以采样了”
-    parameter logic [23:0] Kp           = 24'd32768,// 电流环 PID 控制算法的 P 参数
-    parameter logic [23:0] Ki           = 24'd2     // 电流环 PID 控制算法的 I 参数
+    parameter        INIT_CYCLES  = 16777216,       // 决定了初始化步骤占多少个时钟(clk)周期，取值范围为1~4294967294。该值不能太短，因为要留足够的时间让转子回归电角度=0。例如若时钟(clk)频率为 36.864MHz，INIT_CYCLES=16777216，则初始化时间为 16777216/36864000=0.45 秒
+    parameter        ANGLE_INV    = 0,              // 若角度传感器没装反（A->B->C->A 的旋转方向与 φ 增大的方向相同），则该参数应设为 0。若角度传感器装反了（A->B->C->A 的旋转方向与 φ 增大的方向相反），则该参数应设为 1。
+    parameter [ 7:0] POLE_PAIR    = 8'd7,           // 电机极对数 (简记为N)，取值范围1~255，根据电机型号决定。（电角度ψ = 极对数N * 机械角度φ）
+    parameter [ 8:0] MAX_AMP      = 9'd384,         // SVPWM 的最大振幅，取值范围为1~511，该值越小，电机能达到的最大力矩越小；但考虑到使用3相下桥臂电阻采样法来采样电流，该值也不能太大，以保证3个下桥臂有足够的持续导通时间来供ADC进行采样。
+    parameter [ 8:0] SAMPLE_DELAY = 9'd120          // 采样延时，取值范围0~511，考虑到3相的驱动 MOS 管从开始导通到电流稳定需要一定的时间，所以从3个下桥臂都导通，到 ADC 采样时刻之间需要一定的延时。该参数决定了该延时是多少个时钟周期，当延时结束时，该模块在 sn_adc 信号上产生一个高电平脉冲，指示外部 ADC “可以采样了”
 ) (
     // ----------------------------------------------- 驱动时钟和复位 ---------------------------------------------------------------------------------------------------------------------------------------------
     input  wire               rstn,                 // 复位信号，应该先拉低来对模块进行复位，然后一直保持高电平来让模块正常工作。
     input  wire               clk,                  // 时钟信号，频率可取几十MHz。控制频率 = 时钟频率 / 2048。比如若时钟频率为 36.864MHz ，那么控制频率为 36.864MHz/2048=18kHz。（控制频率 = 3相电流采样的采样率 = PID算法的控制频率 = SVPWM占空比的更新频率）
+    // ----------------------------------------------- PI 参数 ----------------------------------------------------------------------------------------------------------------------------------------------------
+    input  wire        [30:0] Kp,
+    input  wire        [30:0] Ki,
     // ----------------------------------------------- 角度传感器输入信号 -----------------------------------------------------------------------------------------------------------------------------------------
     input  wire        [11:0] phi,                  // 角度传感器输入（机械角度，简记为φ），取值范围0~4095。0对应0°；1024对应90°；2048对应180°；3072对应270°。
     // ----------------------------------------------- 3相电流 ADC 采样时刻控制信号 和采样结果输入信号 ------------------------------------------------------------------------------------------------------------
@@ -73,13 +76,13 @@ reg         [11:0] vs_theta;      // 定子极坐标系上的电压矢量的角�
 generate if(ANGLE_INV) begin                              // 如果角度传感器装反了
     always @ (posedge clk or negedge init_done) 
         if(~init_done)
-            psi <= '0;
+            psi <= 0;
         else
             psi <= {4'h0, POLE_PAIR} * (init_phi - phi);  // ψ = -N * (φ - Φ)
 end else begin                                            // 如果角度传感器没装反
     always @ (posedge clk or negedge init_done) 
         if(~init_done)
-            psi <= '0;
+            psi <= 0;
         else
             psi <= {4'h0, POLE_PAIR} * (phi - init_phi);  // ψ =  N * (φ - Φ)
 end endgenerate
@@ -95,7 +98,7 @@ end endgenerate
 // 输出更新：ADC 每采样完成一次（即en_adc每产生一次高电平脉冲）后更新一次，即更新频率 = 控制周期，更新后 en_iabc 产生一个时钟周期的高电平脉冲
 always @ (posedge clk or negedge init_done)
     if(~init_done) begin
-        {en_iabc, ia, ib, ic} <= '0;
+        {en_iabc, ia, ib, ic} <= 0;
     end else begin
         en_iabc <= en_adc;
         if(en_adc) begin
@@ -113,7 +116,7 @@ always @ (posedge clk or negedge init_done)
 // 计算公式：Iα = 2 * Ia - Ib - Ic
 //           Iβ = √3 * (Ib - Ic)
 // 输出更新：en_iabc 每产生一个高电平脉冲后的若干周期后 Iα, Iβ 更新，同时 en_ialphabeta 产生一个时钟周期的高电平脉冲，即更新频率 = 控制周期
-clark_tr clark_tr_i(
+clark_tr u_clark_tr (
     .rstn         ( init_done                ),
     .clk          ( clk                      ),
     .i_en         ( en_iabc                  ),
@@ -134,7 +137,7 @@ clark_tr clark_tr_i(
 // 计算公式：Id = Iα * cosψ + Iβ * sinψ;
 //           Iq = Iβ * cosψ - Iα * sinψ;
 // 输出更新：en_ialphabeta 每产生一个高电平脉冲后的若干周期后 Id, Iq 更新，同时 en_idq 产生一个时钟周期的高电平脉冲，即更新频率 = 控制周期
-park_tr park_tr_i (
+park_tr u_park_tr (
     .rstn         ( init_done                ),
     .clk          ( clk                      ),
     .psi          ( psi                      ),  // input : ψ
@@ -154,13 +157,12 @@ park_tr park_tr_i (
 // 输出    ：电压矢量在d轴上的分量（vd）
 // 原理    ：PID 控制（实际上没有D，只有P和I）
 // 输出更新：en_idq 每产生一个高电平脉冲后的若干周期后 Vd 更新，即更新频率 = 控制周期
-pi_controller #(
-    .Kp           ( Kp                       ),
-    .Ki           ( Ki                       )
-) pi_id_i (
+pi_controller u_id_pi (
     .rstn         ( init_done                ),
     .clk          ( clk                      ),
     .i_en         ( en_idq                   ),
+    .i_Kp         ( Kp                       ),
+    .i_Ki         ( Ki                       ),
     .i_aim        ( id_aim                   ),  // input : Idaim
     .i_real       ( id                       ),  // input : Id
     .o_en         (                          ),
@@ -175,13 +177,12 @@ pi_controller #(
 // 输出    ：电压矢量在q轴上的分量（vq）
 // 原理    ：PID 控制（实际上没有D，只有P和I）
 // 输出更新：en_idq 每产生一个高电平脉冲后的若干周期后 Vq 更新，即更新频率 = 控制周期
-pi_controller #(
-    .Kp           ( Kp                       ),
-    .Ki           ( Ki                       )
-) pi_iq_i (
+pi_controller u_iq_pi (
     .rstn         ( init_done                ),
     .clk          ( clk                      ),
     .i_en         ( en_idq                   ),
+    .i_Kp         ( Kp                       ),
+    .i_Ki         ( Ki                       ),
     .i_aim        ( iq_aim                   ),  // input : Iqaim
     .i_real       ( iq                       ),  // input : Iq
     .o_en         (                          ),
@@ -196,7 +197,7 @@ pi_controller #(
 // 输出    ：电压矢量在转子极坐标系上的幅值（Vrρ）
 // 原理    ：电压矢量在转子极坐标系上的角度（Vrθ）
 // 输出更新：Vd, Vq 每产生变化的若干周期后 Vrρ 和 Vrθ 更新，更新频率 = 控制周期
-cartesian2polar cartesian2polar_i (
+cartesian2polar u_cartesian2polar (
     .rstn         ( init_done                ),
     .clk          ( clk                      ),
     .i_en         ( 1'b1                     ),
@@ -216,9 +217,9 @@ cartesian2polar cartesian2polar_i (
 // 输出    ：Φ，Vsρ, Vsθ，init_done
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        {vs_rho, vs_theta} <= '0;
-        init_cnt <= '0;
-        init_phi <= '0;
+        {vs_rho, vs_theta} <= 0;
+        init_cnt <= 0;
+        init_phi <= 0;
         init_done <= 1'b0;
     end else begin
         if(init_cnt<=INIT_CYCLES) begin      // 若 init_cnt 计数变量 <= INIT_CYCLES ，则初始化未完成
@@ -242,7 +243,7 @@ always @ (posedge clk or negedge rstn)
 // 输出    ：PWM使能信号 pwm_en
 //           3相PWM信号 pwm_a, pwm_b, pwm_c
 // 说明    ：该模块产生的 PWM 的频率是 clk 频率 / 2048。例如 clk 为 36.864MHz ，则 PWM 的频率为 36.864MHz / 2048 = 18kHz
-svpwm svpwm_i (
+svpwm u_svpwm (
     .rstn         ( rstn                     ),
     .clk          ( clk                      ),
     .v_amp        ( MAX_AMP                  ),
@@ -262,7 +263,7 @@ svpwm svpwm_i (
 // 原理    ：该模块检测 pwm_a, pwm_b, pwm_c 均为低电平的时刻，并延迟 SAMPLE_DELAY 的时钟周期，在 sn_adc 信号上产生一个时钟周期的高电平。
 hold_detect #(
     .SAMPLE_DELAY ( SAMPLE_DELAY             )
-) adc_sn_ctrl_i (
+) u_adc_sn_ctrl (
     .rstn         ( init_done                ),
     .clk          ( clk                      ),
     .in           ( ~pwm_a & ~pwm_b & ~pwm_c ),  // input : 当 pwm_a, pwm_b, pwm_c 均为低电平时=1，否则=0

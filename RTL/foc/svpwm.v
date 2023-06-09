@@ -1,12 +1,14 @@
 
+//--------------------------------------------------------------------------------------------------------
 // 模块：svpwm
 // Type    : synthesizable
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能：7 段式 SVPWM 生成器（调制器） 
 // 输入：定子极坐标系下的电压矢量 Vsρ, Vsθ
 // 输出：PWM使能信号 pwm_en
 //       3相PWM信号 pwm_a, pwm_b, pwm_c
 // 说明：该模块产生的 PWM 的频率是 clk 频率 / 2048。例如 clk 为 36.864MHz ，则 PWM 的频率为 36.864MHz / 2048 = 18kHz
+//--------------------------------------------------------------------------------------------------------
 
 module svpwm (
     input  wire        rstn,
@@ -35,25 +37,25 @@ reg         pwm_act;
 
 always @ (posedge clk or negedge rstn)
     if(~rstn)
-        mul_o <= '0;
+        mul_o <= 12'd0;
     else
         mul_o <= mul_y[20:9];
 
 always @ (posedge clk or negedge rstn)
     if(~rstn)
-        cnt <= '0;
+        cnt <= 11'd0;
     else
         cnt <= cnt + 11'd1;
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        rom_x <= '0;
-        mul_i1 <= '0;
-        mul_i2 <= '0;
-        {sya, syb, syc} <= '0;
-        {ya, yb} <= '0;
-        {pwma_duty, pwmb_duty, pwmc_duty} <= '0;
-        {pwma_lb, pwma_ub, pwmb_lb, pwmb_ub, pwmc_lb, pwmc_ub} <= '0;
+        rom_x <= 0;
+        mul_i1 <= 0;
+        mul_i2 <= 0;
+        {sya, syb, syc} <= 0;
+        {ya, yb} <= 0;
+        {pwma_duty, pwmb_duty, pwmc_duty} <= 0;
+        {pwma_lb, pwma_ub, pwmb_lb, pwmb_ub, pwmc_lb, pwmc_ub} <= 0;
         pwm_act <= 1'b0;
     end else begin
         if(cnt==11'd2041-ROM_LATENCY) begin

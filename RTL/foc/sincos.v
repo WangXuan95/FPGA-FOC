@@ -1,10 +1,12 @@
 
+//--------------------------------------------------------------------------------------------------------
 // 模块：sincos 
 // Type    : synthesizable
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能： 计算 sin 和 cos
 //        在 i_theta 上给出角度（0~π被映射为0~4095），
 //        在 o_sin 和 o_cos 上产生 sinθ 和 cosθ （-1~+1 被映射为 -16384~+16384）
+//--------------------------------------------------------------------------------------------------------
 
 module sincos(
     input  wire               rstn,
@@ -15,7 +17,15 @@ module sincos(
     output reg  signed [15:0] o_sin, o_cos  // -1~+1 is mapped to -16384~+16384
 );
 
-enum logic [2:0] {IDLE, S1, S2, S3, S4, S5} stat;
+
+localparam [2:0] IDLE = 3'd0,
+                 S1   = 3'd1,
+                 S2   = 3'd2,
+                 S3   = 3'd3,
+                 S4   = 3'd4,
+                 S5   = 3'd5;
+
+reg [ 2:0] stat;
 
 reg [11:0] theta_a, theta_b;
 reg        cos_z, cos_s, sin_z, sin_s;
@@ -26,11 +36,11 @@ reg signed [15:0] cos_tmp;
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
         stat <= IDLE;
-        {theta_a, theta_b} <= '0;
-        {cos_z, cos_s, sin_z, sin_s} <= '0;
-        rom_x <= '0;
-        cos_tmp <= '0;
-        {o_en, o_sin, o_cos} <= '0;
+        {theta_a, theta_b} <= 0;
+        {cos_z, cos_s, sin_z, sin_s} <= 0;
+        rom_x <= 0;
+        cos_tmp <= 0;
+        {o_en, o_sin, o_cos} <= 0;
     end else begin
         o_en <= 1'b0;
         case(stat)
@@ -73,7 +83,7 @@ always @ (posedge clk or negedge rstn)
             S3: begin
                 stat <= S4;
                 if(cos_z)
-                    cos_tmp <= '0;
+                    cos_tmp <= 0;
                 else if(cos_s)
                     cos_tmp <= -$signed({1'b0,rom_y});
                 else
@@ -84,13 +94,14 @@ always @ (posedge clk or negedge rstn)
                 o_en <= 1'b1;
                 o_cos <= cos_tmp;
                 if(sin_z)
-                    o_sin <= '0;
+                    o_sin <= 0;
                 else if(sin_s)
                     o_sin <= -$signed({1'b0,rom_y});
                 else
                     o_sin <= $signed({1'b0,rom_y});
             end
-            S5: stat <= IDLE;
+            default: // S5:
+                stat <= IDLE;
         endcase
     end
 

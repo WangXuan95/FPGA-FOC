@@ -1,8 +1,10 @@
 
+//--------------------------------------------------------------------------------------------------------
 // 模块: i2c_register_read
 // Type    : synthesizable
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能    : I2C 读控制器
+//--------------------------------------------------------------------------------------------------------
 
 module i2c_register_read #(
     parameter   [15:0] CLK_DIV       = 16'd16,
@@ -34,30 +36,30 @@ reg [15:0] recv_shift;
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
         epoch <= 1'b0;
-        clkcnt <= '0;
+        clkcnt <= 0;
     end else begin
         if(clkcnt==CLK_DIV_PARSED) begin
             epoch <= 1'b1;
-            clkcnt <= '0;
+            clkcnt <= 0;
         end else begin
             epoch <= 1'b0;
             clkcnt <= clkcnt + 16'd1;
         end
     end
 
-assign ready = (cnt=='0);
+assign ready = (cnt == 8'd0);
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        {scl, sda_e, sda_o} <= '1;
-        cnt <= '0;
-        send_shift <= '0;
-        recv_shift <= '0;
-        regout <= '0;
+        {scl, sda_e, sda_o} <= 3'b111;
+        cnt <= 0;
+        send_shift <= 0;
+        recv_shift <= 0;
+        regout <= 0;
         done <= 1'b0;
     end else begin
         if(ready) begin
-            {scl, sda_e, sda_o} <= '1;
+            {scl, sda_e, sda_o} <= 3'b111;
             if(start) begin
                 cnt <= 8'd1;
             end

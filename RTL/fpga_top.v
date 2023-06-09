@@ -1,10 +1,12 @@
 
+//--------------------------------------------------------------------------------------------------------
 // fpga_top
 // Type    : synthesizable, FPGA's top
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能：FOC 使用示例，是FPGA工程的顶层模块，控制电机的切向力矩一会顺时针一会逆时针，同时可以通过 UART 监测电流环控制的跟随曲线
 // 参数：无
 // 输入输出：详见下方注释
+//--------------------------------------------------------------------------------------------------------
 
 module fpga_top (
     input  wire clk_50m, // 连接 50MHz 晶振
@@ -24,6 +26,7 @@ module fpga_top (
     // ------- UART: 打印转子直角坐标系下的 d 轴实际电流(id)、d 轴目标电流(id_aim)、q 轴实际电流(iq)、q 轴目标电流(iq_aim) ------------------------
     output wire uart_tx
 );
+
 
 wire               rstn;        // 复位信号，初始为0，当PLL锁相成功后置1。
 wire               clk;         // 时钟信号，频率可取几十MHz。控制频率 = 时钟频率 / 2048。比如本例取时钟频率为 36.864MHz ，那么控制频率为 36.864MHz/2048=18kHz。（控制频率 = 3相电流采样的采样率 = PID算法的控制频率 = SVPWM占空比的更新频率）
@@ -47,9 +50,9 @@ reg  signed [15:0] iq_aim;      // 转子 q 轴（交轴）的目标电流值，
 // PLL，用 50MHz 时钟（clk_50m）产生 36.864 MHz 时钟（clk）
 // 注：该模块仅适用于 Altera Cyclone IV FPGA ，对于其他厂家或系列的FPGA，请使用各自相同效果的IP核/原语（例如Xilinx的clock wizard）代替该模块。
 wire [3:0] subwire0;
-altpll altpll_i ( .inclk ( {1'b0, clk_50m} ), .clk ( {subwire0, clk} ), .locked ( rstn ),  .activeclock (),  .areset (1'b0), .clkbad (),  .clkena ({6{1'b1}}),  .clkloss (), .clkswitch (1'b0), .configupdate (1'b0), .enable0 (), .enable1 (),  .extclk (),  .extclkena ({4{1'b1}}), .fbin (1'b1), .fbmimicbidir (),  .fbout (), .fref (), .icdrclk (), .pfdena (1'b1), .phasecounterselect ({4{1'b1}}), .phasedone (), .phasestep (1'b1), .phaseupdown (1'b1),  .pllena (1'b1), .scanaclr (1'b0), .scanclk (1'b0), .scanclkena (1'b1), .scandata (1'b0), .scandataout (),  .scandone (), .scanread (1'b0), .scanwrite (1'b0), .sclkout0 (), .sclkout1 (), .vcooverrange (), .vcounderrange ());
-defparam altpll_i.bandwidth_type = "AUTO", altpll_i.clk0_divide_by = 99,  altpll_i.clk0_duty_cycle = 50, altpll_i.clk0_multiply_by = 73, altpll_i.clk0_phase_shift = "0", altpll_i.compensate_clock = "CLK0", altpll_i.inclk0_input_frequency = 20000, altpll_i.intended_device_family = "Cyclone IV E",  altpll_i.lpm_hint = "CBX_MODULE_PREFIX=pll", altpll_i.lpm_type = "altpll",  altpll_i.operation_mode = "NORMAL",  altpll_i.pll_type = "AUTO", altpll_i.port_activeclock = "PORT_UNUSED",  altpll_i.port_areset = "PORT_UNUSED",  altpll_i.port_clkbad0 = "PORT_UNUSED",  altpll_i.port_clkbad1 = "PORT_UNUSED", altpll_i.port_clkloss = "PORT_UNUSED", altpll_i.port_clkswitch = "PORT_UNUSED", altpll_i.port_configupdate = "PORT_UNUSED", altpll_i.port_fbin = "PORT_UNUSED", altpll_i.port_inclk0 = "PORT_USED",  altpll_i.port_inclk1 = "PORT_UNUSED", altpll_i.port_locked = "PORT_USED", altpll_i.port_pfdena = "PORT_UNUSED",  altpll_i.port_phasecounterselect = "PORT_UNUSED", altpll_i.port_phasedone = "PORT_UNUSED", altpll_i.port_phasestep = "PORT_UNUSED", altpll_i.port_phaseupdown = "PORT_UNUSED",  altpll_i.port_pllena = "PORT_UNUSED", altpll_i.port_scanaclr = "PORT_UNUSED",  altpll_i.port_scanclk = "PORT_UNUSED", altpll_i.port_scanclkena = "PORT_UNUSED", altpll_i.port_scandata = "PORT_UNUSED", altpll_i.port_scandataout = "PORT_UNUSED", altpll_i.port_scandone = "PORT_UNUSED", altpll_i.port_scanread = "PORT_UNUSED", altpll_i.port_scanwrite = "PORT_UNUSED", altpll_i.port_clk0 = "PORT_USED", altpll_i.port_clk1 = "PORT_UNUSED", altpll_i.port_clk2 = "PORT_UNUSED",  altpll_i.port_clk3 = "PORT_UNUSED", altpll_i.port_clk4 = "PORT_UNUSED", altpll_i.port_clk5 = "PORT_UNUSED", altpll_i.port_clkena0 = "PORT_UNUSED",  altpll_i.port_clkena1 = "PORT_UNUSED", altpll_i.port_clkena2 = "PORT_UNUSED", altpll_i.port_clkena3 = "PORT_UNUSED",  altpll_i.port_clkena4 = "PORT_UNUSED", altpll_i.port_clkena5 = "PORT_UNUSED", altpll_i.port_extclk0 = "PORT_UNUSED", altpll_i.port_extclk1 = "PORT_UNUSED",  altpll_i.port_extclk2 = "PORT_UNUSED",  altpll_i.port_extclk3 = "PORT_UNUSED",  altpll_i.self_reset_on_loss_lock = "OFF",  altpll_i.width_clock = 5;
-
+altpll u_altpll ( .inclk ( {1'b0, clk_50m} ), .clk ( {subwire0, clk} ), .locked ( rstn ),  .activeclock (),  .areset (1'b0), .clkbad (),  .clkena ({6{1'b1}}),  .clkloss (), .clkswitch (1'b0), .configupdate (1'b0), .enable0 (), .enable1 (),  .extclk (),  .extclkena ({4{1'b1}}), .fbin (1'b1), .fbmimicbidir (),  .fbout (), .fref (), .icdrclk (), .pfdena (1'b1), .phasecounterselect ({4{1'b1}}), .phasedone (), .phasestep (1'b1), .phaseupdown (1'b1),  .pllena (1'b1), .scanaclr (1'b0), .scanclk (1'b0), .scanclkena (1'b1), .scandata (1'b0), .scandataout (),  .scandone (), .scanread (1'b0), .scanwrite (1'b0), .sclkout0 (), .sclkout1 (), .vcooverrange (), .vcounderrange ());
+defparam u_altpll.bandwidth_type = "AUTO", u_altpll.clk0_divide_by = 99,  u_altpll.clk0_duty_cycle = 50, u_altpll.clk0_multiply_by = 73, u_altpll.clk0_phase_shift = "0", u_altpll.compensate_clock = "CLK0", u_altpll.inclk0_input_frequency = 20000, u_altpll.intended_device_family = "Cyclone IV E",  u_altpll.lpm_hint = "CBX_MODULE_PREFIX=pll", u_altpll.lpm_type = "altpll",  u_altpll.operation_mode = "NORMAL",  u_altpll.pll_type = "AUTO", u_altpll.port_activeclock = "PORT_UNUSED",  u_altpll.port_areset = "PORT_UNUSED",  u_altpll.port_clkbad0 = "PORT_UNUSED",  u_altpll.port_clkbad1 = "PORT_UNUSED", u_altpll.port_clkloss = "PORT_UNUSED", u_altpll.port_clkswitch = "PORT_UNUSED", u_altpll.port_configupdate = "PORT_UNUSED", u_altpll.port_fbin = "PORT_UNUSED", u_altpll.port_inclk0 = "PORT_USED",  u_altpll.port_inclk1 = "PORT_UNUSED", u_altpll.port_locked = "PORT_USED", u_altpll.port_pfdena = "PORT_UNUSED",  u_altpll.port_phasecounterselect = "PORT_UNUSED", u_altpll.port_phasedone = "PORT_UNUSED", u_altpll.port_phasestep = "PORT_UNUSED", u_altpll.port_phaseupdown = "PORT_UNUSED",  u_altpll.port_pllena = "PORT_UNUSED", u_altpll.port_scanaclr = "PORT_UNUSED",  u_altpll.port_scanclk = "PORT_UNUSED", u_altpll.port_scanclkena = "PORT_UNUSED", u_altpll.port_scandata = "PORT_UNUSED", u_altpll.port_scandataout = "PORT_UNUSED", u_altpll.port_scandone = "PORT_UNUSED", u_altpll.port_scanread = "PORT_UNUSED", u_altpll.port_scanwrite = "PORT_UNUSED", u_altpll.port_clk0 = "PORT_USED", u_altpll.port_clk1 = "PORT_UNUSED", u_altpll.port_clk2 = "PORT_UNUSED",  u_altpll.port_clk3 = "PORT_UNUSED", u_altpll.port_clk4 = "PORT_UNUSED", u_altpll.port_clk5 = "PORT_UNUSED", u_altpll.port_clkena0 = "PORT_UNUSED",  u_altpll.port_clkena1 = "PORT_UNUSED", u_altpll.port_clkena2 = "PORT_UNUSED", u_altpll.port_clkena3 = "PORT_UNUSED",  u_altpll.port_clkena4 = "PORT_UNUSED", u_altpll.port_clkena5 = "PORT_UNUSED", u_altpll.port_extclk0 = "PORT_UNUSED", u_altpll.port_extclk1 = "PORT_UNUSED",  u_altpll.port_extclk2 = "PORT_UNUSED",  u_altpll.port_extclk3 = "PORT_UNUSED",  u_altpll.self_reset_on_loss_lock = "OFF",  u_altpll.width_clock = 5;
+//assign rstn=1'b1; assign clk=clk_50m;
 
 
 // 简易 I2C 读取控制器，实现 AS5600 磁编码器读取，读出当前转子机械角度 φ
@@ -58,7 +61,7 @@ i2c_register_read #(
     .CLK_DIV      ( 16'd10         ),  // i2c_scl 时钟信号分频系数，scl频率 = clk频率 / (4*CLK_DIV) ，例如在本例中 clk 为 36.864MHz，CLK_DIV=10，则 SCL 频率为 36864/(4*10) = 922kHz 。注，AS5600 芯片要求 SCL 频率不超过 1MHz
     .SLAVE_ADDR   ( 7'h36          ),  // AS5600's I2C slave address
     .REGISTER_ADDR( 8'h0E          )   // the register address to read
-) as5600_read_i (
+) u_as5600_read (
     .rstn         ( rstn           ),
     .clk          ( clk            ),
     .scl          ( i2c_scl        ), // I2C 接口： SCL
@@ -77,7 +80,7 @@ adc_ad7928 #(
     .CH0          ( 3'd1           ), // 指示 CH0 对应 AD7928 的 通道1。（硬件上 A 相电流连接到 AD7928 的 通道1）
     .CH1          ( 3'd2           ), // 指示 CH1 对应 AD7928 的 通道2。（硬件上 B 相电流连接到 AD7928 的 通道2）
     .CH2          ( 3'd3           )  // 指示 CH2 对应 AD7928 的 通道3。（硬件上 C 相电流连接到 AD7928 的 通道3）
-) adc_ad7928_i (
+) u_adc_ad7928 (
     .rstn         ( rstn           ),
     .clk          ( clk            ),
     .spi_ss       ( spi_ss         ), // SPI 接口：SS
@@ -104,12 +107,12 @@ foc_top #(
     .ANGLE_INV    ( 1'b0           ), // 本例中，角度传感器没装反（A->B->C->A 的旋转方向与 φ 增大的方向相同），则该参数应设为 0
     .POLE_PAIR    ( 8'd7           ), // 本例使用的电机的极对数为 7
     .MAX_AMP      ( 9'd384         ), // 384 / 512 = 0.75。说明 SVPWM 的最大振幅 占 最大振幅极限的 75%
-    .SAMPLE_DELAY ( 9'd120         ), // 采样延时，取值范围0~511，考虑到3相的驱动 MOS 管从开始导通到电流稳定需要一定的时间，所以从3个下桥臂都导通，到 ADC 采样时刻之间需要一定的延时。该参数决定了该延时是多少个时钟周期，当延时结束时，该模块在 sn_adc 信号上产生一个高电平脉冲，指示外部 ADC “可以采样了”
-    .Kp           ( 24'd32768      ), // 电流环 PID 控制算法的 P 参数
-    .Ki           ( 24'd2          )  // 电流环 PID 控制算法的 I 参数
-) foc_top_i (
+    .SAMPLE_DELAY ( 9'd120         )  // 采样延时，取值范围0~511，考虑到3相的驱动 MOS 管从开始导通到电流稳定需要一定的时间，所以从3个下桥臂都导通，到 ADC 采样时刻之间需要一定的延时。该参数决定了该延时是多少个时钟周期，当延时结束时，该模块在 sn_adc 信号上产生一个高电平脉冲，指示外部 ADC “可以采样了”
+) u_foc_top (
     .rstn         ( rstn           ),
     .clk          ( clk            ),
+    .Kp           ( 31'd300000     ), // 电流环 PID 控制算法的 P 参数
+    .Ki           ( 31'd30000      ), // 电流环 PID 控制算法的 I 参数
     .phi          ( phi            ), // input : 角度传感器输入（机械角度，简记为φ），取值范围0~4095。0对应0°；1024对应90°；2048对应180°；3072对应270°。
     .sn_adc       ( sn_adc         ), // output: 3相电流 ADC 采样时刻控制信号，当需要进行一次采样时，sn_adc 信号上产生一个时钟周期的高电平脉冲，指示ADC应该进行采样了。
     .en_adc       ( en_adc         ), // input : 3相电流 ADC 采样结果有效信号，sn_adc 产生高电平脉冲后，外部ADC开始采样3相电流，在转换结束后，应在 en_adc 信号上产生一个周期的高电平脉冲，同时把ADC转换结果产生在 adc_a, adc_b, adc_c 信号上
@@ -155,7 +158,7 @@ always @ (posedge clk or negedge rstn)   // 该 always 块令 iq_aim 交替地�
 // UART 发送器(监视器)，格式为：115200,8,n,1
 uart_monitor #(
     .CLK_DIV      ( 16'd320        )   // UART分频倍率，在本例中取320。因为时钟频率为 36.864MHz, 36.864MHz/320=115200
-) uart_monitor_i (
+) u_uart_monitor (
     .rstn         ( rstn           ),
     .clk          ( clk            ),
     .i_en         ( en_idq         ),  // input: 当 en_idq 上出现高电平脉冲时，启动 UART 发送
@@ -165,5 +168,6 @@ uart_monitor #(
     .i_val3       ( iq_aim         ),  // input: 以十进制的形式发送变量 iq_aim
     .o_uart_tx    ( uart_tx        )   // output: UART 发送信号
 );
+
 
 endmodule

@@ -1,8 +1,10 @@
 
+//--------------------------------------------------------------------------------------------------------
 // 模块： hold_detect
 // Type    : synthesizable
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能： 检测 in 从高电平变为低电平并保持 SAMPLE_DELAY 个时钟周期，在 sn_adc 信号上产生一个时钟周期的高电平。
+//--------------------------------------------------------------------------------------------------------
 
 module hold_detect #(
     parameter [15:0]  SAMPLE_DELAY = 16'd100
@@ -18,7 +20,7 @@ reg [15:0] cnt;
 
 always @ (posedge clk or negedge rstn)
     if(~rstn)
-        {latch1, latch2} <= '1;
+        {latch1, latch2} <= 2'b11;
     else
         {latch1, latch2} <= {in, latch1};
 

@@ -1,8 +1,10 @@
 
-// clark_tr 
+//--------------------------------------------------------------------------------------------------------
+// 模块： clark_tr 
 // Type    : synthesizable
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能： clark 变换
+//--------------------------------------------------------------------------------------------------------
 
 module clark_tr(
     input  wire               rstn,
@@ -24,7 +26,7 @@ reg signed [15:0] ialpha_s2, i_beta1_s2, i_beta2_s2, i_beta3_s2;
 // pipeline stage 1
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        {en_s1, ax2_s1, bmc_s1, bpc_s1} <= '0;
+        {en_s1, ax2_s1, bmc_s1, bpc_s1} <= 0;
     end else begin
         en_s1 <= i_en;
         ax2_s1 <= i_ia << 1;
@@ -35,7 +37,7 @@ always @ (posedge clk or negedge rstn)
 // pipeline stage 2
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        {en_s2, ialpha_s2, i_beta1_s2, i_beta2_s2, i_beta3_s2} <= '0;
+        {en_s2, ialpha_s2, i_beta1_s2, i_beta2_s2, i_beta3_s2} <= 0;
     end else begin
         en_s2 <= en_s1;
         ialpha_s2 <= ax2_s1 - bpc_s1;

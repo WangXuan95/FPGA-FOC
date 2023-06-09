@@ -1,8 +1,10 @@
 
+//--------------------------------------------------------------------------------------------------------
 // 模块： park_tr
 // Type    : synthesizable
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能： park 变换器
+//--------------------------------------------------------------------------------------------------------
 
 module park_tr(
     input  wire               rstn,
@@ -14,7 +16,7 @@ module park_tr(
     output reg  signed [15:0] o_id, o_iq
 );
 
-reg signed [15:0] sin_psi, cos_psi;  // -1~+1 is mapped to -16384~+16384
+wire signed [15:0] sin_psi, cos_psi;  // -1~+1 is mapped to -16384~+16384
 
 reg               en_s1;
 reg signed [31:0] alpha_cos, alpha_sin, beta_cos, beta_sin;
@@ -22,7 +24,7 @@ reg signed [31:0] alpha_cos, alpha_sin, beta_cos, beta_sin;
 wire signed[31:0] ide = alpha_cos + beta_sin;
 wire signed[31:0] iqe = beta_cos  - alpha_sin;
 
-sincos sincos_i(
+sincos u_sincos (
     .rstn        ( rstn       ),
     .clk         ( clk        ),
     .i_en        ( 1'b1       ),
@@ -34,7 +36,7 @@ sincos sincos_i(
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        {en_s1, alpha_cos, alpha_sin, beta_cos, beta_sin} <= '0;
+        {en_s1, alpha_cos, alpha_sin, beta_cos, beta_sin} <= 0;
     end else begin
         en_s1 <= i_en;
         alpha_cos <= i_ialpha * cos_psi;
@@ -45,7 +47,7 @@ always @ (posedge clk or negedge rstn)
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        {o_en, o_id, o_iq} <= '0;
+        {o_en, o_id, o_iq} <= 0;
     end else begin
         o_en <= en_s1;
         if(en_s1) begin

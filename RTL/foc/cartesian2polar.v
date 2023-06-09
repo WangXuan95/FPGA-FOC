@@ -1,8 +1,10 @@
 
+//--------------------------------------------------------------------------------------------------------
 // 模块： cartesian2polar
 // Type    : synthesizable
-// Standard: SystemVerilog 2005 (IEEE1800-2005)
+// Standard: Verilog 2001 (IEEE1364-2001)
 // 功能： 把直角坐标系 (x,y) 转换为极坐标系 
+//--------------------------------------------------------------------------------------------------------
 
 module cartesian2polar #(
     parameter ATTENUAION = 0
@@ -35,19 +37,19 @@ wire [15:0] ampatt_w = amp_w >> ATTENUAION;
 
 always @ (posedge clk or negedge rstn)
     if(~rstn) begin
-        cnt <= '0;
-        {signx, signy, signxy, absx, absy, smtb, smta, accb, acca} <= '0;
-        {a, theta, amp} <= '0;
-        {o_en, o_rho, o_theta} <= '0;
+        cnt <= 0;
+        {signx, signy, signxy, absx, absy, smtb, smta, accb, acca} <= 0;
+        {a, theta, amp} <= 0;
+        {o_en, o_rho, o_theta} <= 0;
     end else begin
         o_en <= 1'b0;
         if(cnt==5'd0) begin
-            accb <= '0;
-            acca <= '0;
-            signx <= i_x<$signed(16'd0);
-            signy <= i_y<$signed(16'd0);
-            absx  <= i_x<$signed(16'd0) ? -i_x : i_x;
-            absy  <= i_y<$signed(16'd0) ? -i_y : i_y;
+            accb <= 0;
+            acca <= 0;
+            signx <= (i_x < $signed(16'd0));
+            signy <= (i_y < $signed(16'd0));
+            absx  <= (i_x < $signed(16'd0)) ? -i_x : i_x;
+            absy  <= (i_y < $signed(16'd0)) ? -i_y : i_y;
             if(i_en)
                 cnt <= 5'd30;
         end else begin
